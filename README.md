@@ -658,13 +658,18 @@ next 就是指向单链表的下个节点的。
 ##### put()方法 
 
 ```java
-public V put(K key, V value) {    return putVal(hash(key), key, value, false, true);}
+public V put(K key, V value) {   
+  return putVal(hash(key), key, value, false, true);
+}
 ```
 
 通过 hash() 方法计算出了 key 的 hash 值
 
 ```java
-static final int hash(Object key) {    int h;    return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);}
+static final int hash(Object key) {   
+  int h;   
+  return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+}
 ```
 
 如果是 null 直接返回 0；
@@ -1263,7 +1268,7 @@ get方法就同理了，还是获取到当前线程，然后取出线程中的Th
 刚才说过了消息的存储，接下来看看消息的取出，也就是 `queue.next` 方法。
 
 ```java
-		Message next() {
+Message next() {
         for (; ; ) {
             if (nextPollTimeoutMillis != 0) {
                 Binder.flushPendingCommands();

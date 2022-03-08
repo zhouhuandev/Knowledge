@@ -40,7 +40,7 @@ startActivity(new Intent())
 
 Intent 需要进行序列化，然后跨进程通讯
 
-activity启动需要与 -》 AMS 
+activity启动需要与 -》 AMS
 
 ### 序列化与持久化的关系和区别是什么？
 
@@ -97,7 +97,7 @@ java中的序列化方式Serializable效率比较低，主要有以下原因：
 
 具体原因就是因为Serilazable的实现方式中，是有缓存的概念的，当一个对象被解析过后，将会缓存在HandleTable中，当下一次解析到同一种类型的对象后，便可以向二进制流中，写入对应的缓存索引即可。但是对于Parcel来说，没有这种概念，每一次的序列化都是独立的，每一个对象，都当作一种新的对象以及新的类型的方式来处理。
 
-具体过程可以看看这篇：https://juejin.cn/post/6854573218334769166
+具体过程可以看看这篇：<https://juejin.cn/post/6854573218334769166>
 
 ### 为什么Java提供了Serializable的序列化方式，而不是直接使用json或者xml？
 
@@ -111,7 +111,7 @@ java中的序列化方式Serializable效率比较低，主要有以下原因：
 
 主要有两点依据：
 
-1. 曾经Oracle Java平台组的架构师说过，删除Java的序列化机制并且提供给用户可以选择的序列化方式（比如json）是他们计划中的一部分，因为Java序列化也造成了很多Java漏洞。具体可以参见文章：https://www.infoworld.com/article/3275924/oracle-plans-to-dump-risky-java-serialization.html
+1. 曾经Oracle Java平台组的架构师说过，删除Java的序列化机制并且提供给用户可以选择的序列化方式（比如json）是他们计划中的一部分，因为Java序列化也造成了很多Java漏洞。具体可以参见文章：<https://www.infoworld.com/article/3275924/oracle-plans-to-dump-risky-java-serialization.html>
 
 2. 因为在Serializable类的介绍注释中，明确说到推荐大家选择JSON 和 GSON库，因为它简洁、易读、高效。
 
@@ -182,7 +182,7 @@ GC的时候肯定伴随着对象的分配，所以对象优先在一等区进行
 
 ### final、finally、finalize的区别
 
-final 修饰 
+final 修饰
 
 类（不能被继承）1.锁定 2.效率
 
@@ -200,7 +200,7 @@ try{
 }
 ```
 
-finalize 
+finalize
 
 finalize基本上不怎么用，不是非常的可靠
 
@@ -328,8 +328,6 @@ public String(char value[], int offset, int count)
 
 因此，上面的准确回答应该是创建了4个字符串对象和1个StringBuilder对象。
 
-
-
 ### Java的四大引用
 
 - 强引用： 普通变量都属于强引用，比如 private Context context;
@@ -395,7 +393,6 @@ public String(char value[], int offset, int count)
 - 这种层级关系可以避免类的重复加载。
 - 是为了防止危险代码的植入，比如String类，如果在AppClassLoader就直接被加载，就相当于会被篡改了，所以都要经过老大，也就是BootstrapClassLoader进行检查，已经加载过的类就不需要再去加载了。
 
-
 ## 集合
 
 ### HashMap
@@ -447,12 +444,12 @@ public String(char value[], int offset, int count)
    2. ConcurrentHashMap java 并发包下的一个线程安全的 HashMap
    3. SynchronizedMap 使用 Collections.synchronizedMap(new HashMap<>()); 来获得一个线程安全的 HashMap,SynchronizedMap内部也是使用的 Synchronized 实现线程安全的
 
-
 ##### 扩容的时机
 
 1. size大于等于 容量 * 加载因子
 2. 扩容的大小为原来的2倍，左移一位
-3. 
+
+3.
 
 **注：** 参考 resize()
 
@@ -541,7 +538,7 @@ public class HashMap<K, V> extends AbstractMap<K, V>
     static final int UNTREEIFY_THRESHOLD = 6;
     // 容器可以树化的最小容量，
     static final int MIN_TREEIFY_CAPACITY = 64;
-  	// 序列化 id
+   // 序列化 id
     private static final long serialVersionUID = 362498820763181265L;
     // 加载因子，可以作为决定扩容的一个因子
     final float loadFactor;
@@ -572,7 +569,7 @@ public HashMap(int initialCapacity, float loadFactor) {
         throw new IllegalArgumentException("Illegal load factor: " +
                 loadFactor);
     this.loadFactor = loadFactor;
-  	// 根据初始容量和负载因子计算阈值
+   // 根据初始容量和负载因子计算阈值
     this.threshold = tableSizeFor(initialCapacity);
 }
 // 创建一个有初始容量的 HashMap 
@@ -596,23 +593,23 @@ public HashMap(Map<? extends K, ? extends V> m) {
 
 ```java
 final void putMapEntries(Map<? extends K, ? extends V> m, boolean evict) {
-  	// 拿到传入 Map 的大小
+   // 拿到传入 Map 的大小
     int s = m.size();
     if (s > 0) {
-      	// 如果 table==null 说明未创建哈希桶
+       // 如果 table==null 说明未创建哈希桶
         if (table == null) { // pre-size
-          	// 因为传入了 s 个键值对，所以需要的容量就是  s / loadFactor ，为了不触发扩容，多加了 1，
+           // 因为传入了 s 个键值对，所以需要的容量就是  s / loadFactor ，为了不触发扩容，多加了 1，
             float ft = ((float) s / loadFactor) + 1.0F;
-          	// 如果 ft 小于最大容量，使用 ft ，否则使用最大容量。
+           // 如果 ft 小于最大容量，使用 ft ，否则使用最大容量。
             int t = ((ft < (float) MAXIMUM_CAPACITY) ?
                     (int) ft : MAXIMUM_CAPACITY);
-          	// 如果容量大于扩容阈值 threshold ，使用tableSizeFor(t)重新计算扩容阈值 threshold 
+           // 如果容量大于扩容阈值 threshold ，使用tableSizeFor(t)重新计算扩容阈值 threshold 
             if (t > threshold)
                 threshold = tableSizeFor(t);
         } else if (s > threshold)
-          	// 如果已经创建了哈希桶，并且需要的容量大于目前的扩容阈值 threshold ，resize()扩容
+           // 如果已经创建了哈希桶，并且需要的容量大于目前的扩容阈值 threshold ，resize()扩容
             resize();
-      	// 循环 传入的 map，调用  putVal 方法循环插入新值。
+       // 循环 传入的 map，调用  putVal 方法循环插入新值。
         for (Map.Entry<? extends K, ? extends V> e : m.entrySet()) {
             K key = e.getKey();
             V value = e.getValue();
@@ -626,13 +623,13 @@ final void putMapEntries(Map<? extends K, ? extends V> m, boolean evict) {
 
 ```java
 //单链表的一个节点，实现了Map.Entry 接口
-static class Node<K, V> implements Map.Entry<K, V> {  	
+static class Node<K, V> implements Map.Entry<K, V> {   
   // 我们传入的key 的 hash 值    
-  final int hash;  	
+  final int hash;   
   // 我们传入的key    
   final K key;   
   // 我们传入的value    
-  V value;	  
+  V value;   
   // 当前节点的后置节点   
   Node<K, V> next;   
   
@@ -653,7 +650,7 @@ next 就是指向单链表的下个节点的。
 
 可以看出，我们传入的键值对基本都是存储在这个 Node 节点里面的(未树化的情况下，树化的话，存储在树节点)。
 
-##### put()方法 
+##### put()方法
 
 ```java
 public V put(K key, V value) {   
@@ -903,15 +900,15 @@ public V remove(Object key) {
     null : e.value;}
 
 /** 
-	* Implements Map.remove and related methods 
-	* 
-	* @param hash       hash for key 
-	* @param key        the key 
-	* @param value      the value to match if matchValue, else ignored 
-	* @param matchValue if true only remove if value is equal 
-	* @param movable    if false do not move other nodes while removing 
-	* @return the node, or null if none 
-	*/
+ * Implements Map.remove and related methods 
+ * 
+ * @param hash       hash for key 
+ * @param key        the key 
+ * @param value      the value to match if matchValue, else ignored 
+ * @param matchValue if true only remove if value is equal 
+ * @param movable    if false do not move other nodes while removing 
+ * @return the node, or null if none 
+ */
 final Node<K, V> removeNode(int hash, Object key, Object value,      
                             boolean matchValue, boolean movable) {  
   Node<K, V>[] tab;  
@@ -1037,7 +1034,7 @@ Set keys = map.keySet();
 Iterator ite = keys.iterator();
 while (ite.hasNext()) {   
   Object key = ite.next();  
-  key.key; 	
+  key.key;  
   key.value;
 }
 // entrySet 遍历
@@ -1063,7 +1060,6 @@ for (Integer value : map.values()) {
 你好，HashMap 是我们日常开发当中几乎每天都要用到的这么一个集合类，它是以**键值对**的形式进行存储，在 JDK1.7 到 JDk1.8 之间 HashMap 的实现略有区别，其中最重要的两个区别在 JDK1.7 的时候 HashMap 采用的数据结构是**数组+链表**，但是到了 JDK1.8 之后数据结构是 **数组+链表+红黑树**，红黑树的引入是为了提高他的查询效率，因为我们的链表的查询，查询时间的复杂度是  `O(n)` ,但是我们的红黑树的是 `O(log(n))` ,还有一点是，在 JDK1.7 之前当我们遇到哈希碰撞需要需要在链表上添加数据的时候，采用的是**头插法**，但是到了 JDK1.8 之后改用了**尾插法**，嗯，因为头插法在多线程的情况下，会导致一些问题啊，比如说，他会形成**循环链表**啊，耗尽我们 CPU 的性能，恩，为了解决这个问题，在 JDK1.8 之后改用了尾插法，当然，JDK1.7 和 JDK1.8 之间还有很多优化的细节啊，这个我可能记得不大清楚了，比如说他的 hash 算法，进行了一个简化，还有一些其他的东西，我们需要在源码里面才能把它看的更透，当然这个源码我是读过的啊，只是这些东西，啊，可能是记得不太清楚了，接下来呢，我就 JDK1.8 和您聊一聊 HashMap 的一些基本原理，首先啊，我们在创建 HashMap 的时候，阿里规约里面要求我们需要传入一个初始化容量，就是在我们预知的前提下，我们将来可能要插入多少数据的前提下，我们最好传入一个初始化容量，而且这个初始化容量最好是一个二的次幂，我接下来可能和你接着聊，为什么是二的次幂，首先呢，当我们往 HashMap 中 put 值的时候，当 put 第一个值的时候，我们的刚才所说的不管是**数组加链表**还是**数组加链表加红黑树**的数组会不会初始化，按照我们传入的初始化容量，大于等于这个初始化容量的最近的一个二次幂，啊，这么一个值，给我们进行初始化数组，啊，然后初始化之后呢，他会使用他的 key 的 hash 值 **与(&)** 上它的容量，就是我们的这个二的次幂减一算出他的下标，也因为我们的容量都是二的次幂，二的次幂减一之后它所有的低位都是一，高位都是零，和咱们的哈希进  **与(&)** 运算之后他一定能 **与(&)** 出来一个下标在咱们的容量范围之内的一个下标值。因为 **与(&)** 运算在计算机里面效率是非常的高，所以它采取的是 **与(&)** 运算而不是取余运算，取余运算的效率非常的慢，当然呢，在咱们往里面添加数据的时候会产生两个问题，**一个问题就是扩容的问题，一个问题就是树化的问题**，关于扩容的问题，在 HashMap 里面有一个成员变量他叫**加载因子**，当我们 HashMap 的 Size 就是你**插入节点的数量大于等于容量乘以扩容因子，也就是加载因子**，也就是 16 * 0.75，也就是当 Size 大于 12 的时候它就会进行一次扩容，当然，当我们的链表上悬挂的数据节点足够多的时候，它还会进行树化，当然树化其实是一个很耗性能的，那当然树化和扩容都是一个很耗性能的操作，**树化的前提就是我们的链表长度必须大于等于八** ，当然这还不够，在我们的 HashMap 的源码里面还有一个成员变量，它让我们清晰的看到，这个成员变量就是最小的树化的一个容量，意思就是咱们的那个数组，如果数组的容量达不到64，它默认是64，啊，它会优先选择扩容，而不是对咱们的链表进行树化，所以树化它是有两个先决条件的，第一个它要满足的条件就是，我们的容量，数组的容量要大于等于64，第二个就是链表的长度要大于等于8，那么，阿里规约里面要求我们传入初始化容量，其实根本的目的就是在于少扩容，那我我们也可以在阿里规约里面找到这个初始化容量的一些计算方式，我记得应该是，你**将来要存入的数据的数量除以扩容因子然后加一**，应该是这么一个算法，关于 HashMap 我了解的大概就这么多。
 
 ## Handler
-
 
 ### MessageQueue源码分析
 
@@ -1339,10 +1335,7 @@ else {
 
 `-1` 就代表一直阻塞。
 
-
-
-
-#### 当MessageQueue 没有消息的时候，在干什么，会占用CPU资源吗。
+#### 当MessageQueue 没有消息的时候，在干什么，会占用CPU资源吗
 
 MessageQueue 没有消息时，便阻塞在 loop 的 queue.next() 方法这里。具体就是会调用到nativePollOnce方法里，最终调用到epoll_wait()进行阻塞等待。
 
@@ -1350,7 +1343,7 @@ MessageQueue 没有消息时，便阻塞在 loop 的 queue.next() 方法这里�
 
 这里涉及到阻塞和唤醒的机制叫做 epoll 机制。
 
-##### 先说说文件描述符和I/O多路复用：
+##### 先说说文件描述符和I/O多路复用
 
 > 在Linux操作系统中，可以将一切都看作是文件,而文件描述符简称fd，当程序打开一个现有文件或者创建一个新文件时，内核向进程返回一个文件描述符，可以理解为一个索引值。
 
@@ -1390,7 +1383,6 @@ MessageQueue 没有消息时，便阻塞在 loop 的 queue.next() 方法这里�
 
 使用场景就很多了，比如绘制方法 `scheduleTraversals` 。
 
-
 ```java
 void scheduleTraversals() {   
   if (!mTraversalScheduled) {  
@@ -1409,7 +1401,7 @@ mHandler.sendMessageAtTime(msg, dueTime);
 ```
 
 在该方法中加入了同步屏障，后续加入一个异步消息`MSG_DO_SCHEDULE_CALLBACK`，最后会执行到`FrameDisplayEventReceiver`，用于申请`VSYNC`信号。
-更多Choreographer相关内容可以看看这篇文章——https://www.jianshu.com/p/86d00bbdaf60
+更多Choreographer相关内容可以看看这篇文章——<https://www.jianshu.com/p/86d00bbdaf60>
 
 #### Message消息被分发之后会怎么处理？消息怎么复用的？
 
@@ -2066,10 +2058,9 @@ public void setMessageLogging(@Nullable Printer printer) {
 ```
 
 这就是BlockCanary的原理。
-具体介绍可以看看作者的说明：http://blog.zhaiyifan.cn/2016/01/16/BlockCanaryTransparentPerformanceMonitor/
+具体介绍可以看看作者的说明：<http://blog.zhaiyifan.cn/2016/01/16/BlockCanaryTransparentPerformanceMonitor/>
 
-
-#### 说说Hanlder内存泄露问题。
+#### 说说Hanlder内存泄露问题
 
 这也是常常被问的一个问题，`Handler`内存泄露的原因是什么？
 
@@ -2081,7 +2072,7 @@ public void setMessageLogging(@Nullable Printer printer) {
 
 主线程 —> threadlocal —> Looper —> MessageQueue —> Message —> Handler —> Activity
 
-具体分析可以看看我之前写的这篇文章：https://juejin.cn/post/6909362503898595342
+具体分析可以看看我之前写的这篇文章：<https://juejin.cn/post/6909362503898595342>
 
 #### 利用Handler机制设计一个不崩溃的App？
 
@@ -2102,7 +2093,7 @@ Handler(Looper.getMainLooper()).post {
 ```
 
 还有一些特殊情况处理，比如onCreate内发生崩溃，具体可以看看文章
-《能否让APP永不崩溃》https://juejin.cn/post/6904283635856179214
+《能否让APP永不崩溃》<https://juejin.cn/post/6904283635856179214>
 
 ## Android 性能优化
 
@@ -2144,7 +2135,6 @@ Android 3.0 开始，Google提供了属性动画，属性动画中有一类五�
 。Android规定，Activity如果5s之内无法响应屏幕触摸事件或者键盘输入事件就会出现ANR，而BroadcastReceiver如果10s内还未执行也会出现ANR。
 
 如何定位ANR呢？其实当一个进程发生了ANR了以后，系统会在`/data/anr`目录下创建一个文件 `traces.txt`,通过分析这个文件就能定位出ANR的原因
-
 
 #### ListView和Bitmap优化
 
@@ -2233,7 +2223,7 @@ size=1960000
 
 所以我们这里的图片内存计算就得出：
 
-宽700 * 高700 * 每个像素4字节=1960000
+宽700 *高700* 每个像素4字节=1960000
 
 ###### Bitmap内存 和drawable目录的关系
 
@@ -2241,7 +2231,7 @@ size=1960000
 
 ![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/5629CDEAC7F147058035512BC799ECEE/11594)
 
-刚才的案例，我们是把图片放到drawable-xxhdpi文件夹,而drawable-xxhdpi文件夹对应的dpi就是我们测试手机的dpi—480。所以图片的内存就是我们所计算的宽 * 高 * 每个像素所占字节。
+刚才的案例，我们是把图片放到drawable-xxhdpi文件夹,而drawable-xxhdpi文件夹对应的dpi就是我们测试手机的dpi—480。所以图片的内存就是我们所计算的宽 *高* 每个像素所占字节。
 
 如果我们把图片放到其他的文件夹，比如drawable-hdpi文件夹（对应的dpi是240），会发生什么呢？
 
@@ -2261,7 +2251,7 @@ size = 7840000
 
 所以我们这张图片的实际占用内存位：
 
-宽700 * （480/240） * 高700 * （480/240） * 每个像素4字节 = 7840000
+宽700 *（480/240）* 高700 *（480/240）* 每个像素4字节 = 7840000
 
 ###### Bitmap内存复用怎么实现？
 
@@ -2331,7 +2321,7 @@ fun setImagePart() {
 实际项目使用中，我们可以根据手势滑动，然后不断更新我们的Rect参数来实现具体的功能即可。
 
 具体实现源码可以参考鸿洋的博客：
-https://blog.csdn.net/lmj623565791/article/details/49300989
+<https://blog.csdn.net/lmj623565791/article/details/49300989>
 
 ###### 如何跨进程传递大图？
 
@@ -2394,7 +2384,7 @@ class BitmapBinder :Binder(){
 
 冷启动的过程主要分为两步：
 
-1）系统任务。加载并启动应用程序；显示应用程序的空白启动窗口；创建APP进程 
+1）系统任务。加载并启动应用程序；显示应用程序的空白启动窗口；创建APP进程
 
 2）APP进程任务。启动主线程；创建Activity；加载布局；屏幕布局；绘制屏幕
 
@@ -2449,7 +2439,7 @@ class BitmapBinder :Binder(){
 - UI方面 windowBackground，布局嵌套，webview。
 
 具体说明可以看往期文章 Android启动优化全解析
-https://mp.weixin.qq.com/s?__biz=MzU0MTYwMTIzMw==&mid=2247484835&idx=1&sn=f62c8fb5c9a461987f5bb5446bc5a19b&scene=21#wechat_redirect
+<https://mp.weixin.qq.com/s?__biz=MzU0MTYwMTIzMw==&mid=2247484835&idx=1&sn=f62c8fb5c9a461987f5bb5446bc5a19b&scene=21#wechat_redirect>
 
 ##### 障眼法之闪屏页
 
@@ -2514,7 +2504,6 @@ BlockCanary BlockCanary 可以监听主线程耗时的方法，就是在主线�
 
 而记录时间的方法我们之前也说过，就是通过looper()方法中循环去从MessageQueue中去取msg的时候，在dispatchMessage方法前后会有logging日志打印，所以只需要自定义一个Printer，重写println(String x)方法即可实现耗时统计了。
 
-
 #### 打包优化
 
 Analyze APK 后可以发现代码 和 资源其实是 app包的主要内存。
@@ -2525,7 +2514,6 @@ Analyze APK 后可以发现代码 和 资源其实是 app包的主要内存。
 - Assests 中的 mp4 /3 可以在需要使用的时候从服务器上下载下来，字体文件 使用字体提取工具FontZip 删除不用的文字格式，毕竟几千个中文app中怎么可能都使用。
 - lib 包如果 适配机型大多为高通 RAM ，可以单独引用abiFilters "armeabi-v7a"。
 - build文件中 resConfigs "zh" 剔除掉 官方中或者第三方库中的 外国文字资源。
-
 
 ### 优化WebView内存泄露
 
@@ -2584,7 +2572,6 @@ System.exit(0)
 ### 启动流程
 
 ![启动流程](https://gitee.com/shandong_zhaotai_network_sd_zhaotai/ImageRepo/raw/master/2021/images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210316102709.png)
-
 
 ### app启动交互逻辑
 
@@ -2733,7 +2720,6 @@ FLAG_ACTIVITY_CLEAR_TOP
 FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
 具有这个标记的 Activity 不会出现在历史 Activity 的列表中，在某些情况下我们不希望用户通过历史列表回到我们的 Activity 的时候这个标记比较有用。它等同于在 XML 中指定 Activity 的属性 android:excludeFromRecents="true"。
 
-
 ### Fragment生命周期，当hide，show，replace时候生命周期变化
 
 1）生命周期：
@@ -2796,7 +2782,6 @@ public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle sa
   return mFragmentView;
 }
 ```
-
 
 ## 进程间通讯
 
@@ -2873,7 +2858,6 @@ Android 会为每个进程分配独立的虚拟内存空间，每个进程的虚
 2. 接着在内核空间开辟一块 **内核缓存区**，建**立内核缓存区**和**数据接收缓存区**的映射关系，以及内核中的**数据接收缓存区**和**B用户空间 缓存区**的映射关系。
 3. **发送方进程 A 使用 copyfromuser（），将数据拷贝到内核缓存区，由于内核缓存区和数据接收缓存区有映射关系，数据接收缓存区和B进程的用户空间缓存区有映射关系，因此也就相当于把数据从 A 进程传递到了 B 进程。**
 
-
 ![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/280ED7790E6C4E85AAAB68E2A3402F17/11547)
 
 #### 稳定性好
@@ -2914,7 +2898,7 @@ Android 会为每个进程分配独立的虚拟内存空间，每个进程的虚
 ### Hook
 
 Hook android 使用
-https://www.jianshu.com/p/4f6d20076922
+<https://www.jianshu.com/p/4f6d20076922>
 
 Hook 的选择点：静态变量和单例，因为一旦创建对象，它们不容易变化，非常容易定位。
 
@@ -2944,10 +2928,10 @@ Hook 过程：
 ### View.post
 
 参考博客1
-https://blog.csdn.net/scnuxisan225/article/details/49815269
+<https://blog.csdn.net/scnuxisan225/article/details/49815269>
 
 参考博客2
-https://www.cnblogs.com/dasusu/p/8047172.html
+<https://www.cnblogs.com/dasusu/p/8047172.html>
 
 想要在 onCreate 中获取到View宽高的方法有：
 
@@ -3007,7 +2991,6 @@ void doTraversal() {
 
 因此，这个时候Handler正在执行着TraversalRunnable这个Runnable，而我们post的Runnable要等待TraversalRunnable执行完才会去执行，而TraversalRunnable这里面又会进行measure,layout和draw流程，所以等到执行我们的Runnable时，此时的View就已经被measure过了，所以获取到的宽高就是measure过后的宽高。
 
-
 ### 动画(4种类型)
 
 View 动画的作用对象是View，它支持4中动画效果，分别是平移动画(TranslateAnimation<translate>)、缩放动画(ScaleAnimation<scale>)、旋转动画(RotateAnimation<rotate>)、透明动画(AlphaAnimation<alpha>)。除了这四种典型的变换效果外，帧动画也属于View动画，但是帧动画的表现形式和上面的四种变换效果不大一样。
@@ -3026,7 +3009,6 @@ View 动画的作用对象是View，它支持4中动画效果，分别是平移�
 
 提升动画 可以打开 硬件加速，使GPU 承担一部分CPU的工作。
 
-
 ### 说说View/ViewGroup的绘制流程
 
 View的绘制流程是从ViewRoot的performTraversals开始的，它经过measure，layout，draw三个过程最终将View绘制出来。performTraversals会依次调用performMeasure，performLayout，performDraw三个方法，他们会依次调用measure，layout，draw方法，然后又调用了onMeasure，onLayout，dispatchDraw。
@@ -3041,12 +3023,11 @@ View的绘制流程是从ViewRoot的performTraversals开始的，它经过measur
 
 **draw** ：把 View 对象绘制到屏幕上。
 
-
 draw（）会依次调用四个方法：
 
 - 1）drawBackground()，根据在 layout 过程中获取的 View 的位置参数，来设置背景的边界。
 - 2）onDraw()，绘制View本身的内容，一般自定义单一view会重写这个方法，实现一些绘制逻辑。
-- 3） dispatchDraw()，绘制子View 
+- 3） dispatchDraw()，绘制子View
 - 4）onDrawScrollBars(canvas)，绘制装饰，如 滚动指示器、滚动条、和前景.
 
 ### 说说你理解的MeasureSpec
@@ -3193,7 +3174,7 @@ unable to add window --token null
 
 所以这个token就是用来验证是否能够添加Window，可以理解为权限验证，其实也就是为了防止开发者乱用context创建window。
 
-拥有token的context（比如Activity）就可以操作Window。没有token的上下文（比如Application）就不允许直接添加Window到屏幕（除了系统Window）。 
+拥有token的context（比如Activity）就可以操作Window。没有token的上下文（比如Application）就不允许直接添加Window到屏幕（除了系统Window）。
 
 ### Application中可以直接弹出Dialog吗？
 
@@ -3206,9 +3187,9 @@ unable to add window --token null
 
 ```kotlin
 if (!Settings.canDrawOverlays(this)) {   
-		val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION) 
-		intent.data = Uri.parse("package:$packageName") 
-		startActivityForResult(intent, 0)
+  val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION) 
+  intent.data = Uri.parse("package:$packageName") 
+  startActivityForResult(intent, 0)
 }
 dialog.window.setType(WindowManager.LayoutParams.TYPE_SYSTEM_DIALOG)
 
@@ -3216,7 +3197,6 @@ dialog.window.setType(WindowManager.LayoutParams.TYPE_SYSTEM_DIALOG)
 ```
 
 - 另外还有一种办法，在Application类中，可以通过registerActivityLifecycleCallbacks监听Activity生命周期，不过这种办法也是传入了Activity的context，只不过在Application类中完成这个工作。
-
 
 ### Activity从创建到我们看到界面，发生了哪些事
 
@@ -3228,8 +3208,6 @@ dialog.window.setType(WindowManager.LayoutParams.TYPE_SYSTEM_DIALOG)
 
 ![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/D97FCBD0D33743F39D0AB951CA597869/11461)
 
-
-
 ### Activity、View、Window 之间的关系
 
 每个 Activity 包含了一个 Window对象，这个对象是由 PhoneWindow做的实现。而 PhoneWindow 将 DecorView作为了一个应用窗口的根 View，这个 DecorView 又把屏幕划分为了两个区域：一个是 TitleView，一个是ContentView，而我们平时在 Xml 文件中写的布局正好是展示在 ContentView 中的。
@@ -3240,8 +3218,7 @@ dialog.window.setType(WindowManager.LayoutParams.TYPE_SYSTEM_DIALOG)
 - DecorView是PhoneWindow的一个内部类，是整个View层级的最顶层，一般包括标题栏和内容栏两部分，会根据不同的主题特性调整不同的布局。它是在setContentView方法中被创建，具体点来说是在PhoneWindow的installDecor方法中被创建。
 - ViewRootImpl是DecorView的parent，用来控制View的各种事件，在handleResumeActivity方法中被创建。
 
-
-### 说说Android的事件分发机制完整流程，也就是从点击屏幕开始，事件会怎么传递。
+### 说说Android的事件分发机制完整流程，也就是从点击屏幕开始，事件会怎么传递
 
 我觉得事件分发机制流程可以分为三部分，分别是从外传里，从里传外，消费之后。
 
@@ -3378,7 +3355,7 @@ requestDisallowInterceptTouchEvent(true)的意思是阻止父view拦截事件，
 
 ### 关于事件分发，事件到底是先到DecorView还是先到Window的？
 
-经过上述一系列问题，是不是对Window印象又深了点呢？最后再看一个问题，这个是wanandroid论坛上看到的(https://wanandroid.com/wenda/show/12119)，
+经过上述一系列问题，是不是对Window印象又深了点呢？最后再看一个问题，这个是wanandroid论坛上看到的(<https://wanandroid.com/wenda/show/12119>)，
 
 这里的window可以理解为PhoneWindow，其实这道题就是问事件分发在Activity、DecorView、PhoneWindow中的顺序。
 
@@ -3447,7 +3424,6 @@ public boolean superDispatchTouchEvent(MotionEvent event) {
 - ViewRootImpl并不知道有Activity这种东西存在，它只是持有了DecorView。所以先传给了DecorView，而DecorView知道有AC，所以传给了AC。
 - Activity也不知道有DecorView，它只是持有PhoneWindow，所以这么一段调用链就形成了。
 
-
 ### Scroller是怎么实现View的弹性滑动？
 
 - 在MotionEvent.ACTION_UP事件触发时调用startScroll()方法，该方法并没有进行实际的滑动操作，而是记录滑动相关量（滑动距离、滑动时间）
@@ -3484,10 +3460,9 @@ public void computeScroll() {
 
 讲一下RecyclerView的缓存机制,滑动10个，再滑回去，会有几个执行onBindView。缓存的是什么？cachedView会执行onBindView吗?
 
-
 这两个问题都是关于缓存的，我就一起说了。
 
-#### 1）首先说下RecycleView的缓存结构：
+#### 1）首先说下RecycleView的缓存结构
 
 Recycleview有四级缓存，分别是mAttachedScrap(屏幕内)，mCacheViews(屏幕外)，mViewCacheExtension(自定义缓存)，mRecyclerPool(缓存池)
 
@@ -3496,14 +3471,14 @@ Recycleview有四级缓存，分别是mAttachedScrap(屏幕内)，mCacheViews(�
 - mViewCacheExtension(自定义缓存)，不直接使用，需要用户自定义实现，默认不实现。
 - mRecyclerPool(缓存池)，当cacheView满了后或者adapter被更换，将cacheView中移出的ViewHolder放到Pool中，放之前会把ViewHolder数据清除掉，所以复用时需要重新bindView。
 
-#### 四级缓存按照顺序需要依次读取。所以完整缓存流程是：
+#### 四级缓存按照顺序需要依次读取。所以完整缓存流程是
 
-##### 保存缓存流程：
+##### 保存缓存流程
 
 - 插入或是删除itemView时，先把屏幕内的ViewHolder保存至AttachedScrap中
 - 滑动屏幕的时候，先消失的itemview会保存到CacheView，CacheView大小默认是2，超过数量的话按照先入先出原则，移出头部的itemview保存到RecyclerPool缓存池（如果有自定义缓存就会保存到自定义缓存里），RecyclerPool缓存池会按照itemview的itemtype进行保存，每个itemType缓存个数为5个，超过就会被回收。
 
-##### 获取缓存流程：
+##### 获取缓存流程
 
 - AttachedScrap中获取，通过pos匹配holder——>获取失败，从CacheView中获取，也是通过pos获取holder缓存 ——>获取失败，从自定义缓存中获取缓存——>获取失败，从mRecyclerPool中获取 ——>获取失败，重新创建viewholder——createViewHolder并bindview。
 
@@ -3520,7 +3495,7 @@ Recycleview有四级缓存，分别是mAttachedScrap(屏幕内)，mCacheViews(�
 - 再往下滑一条数据（position=10），这时候由于可以在mRecyclerPool中找到相同viewtype的ViewHolder了。所以就直接复用了，并调用onBindViewHolder方法绑定数据。
 - 后面依次类推，刚消失的两条数据会被放到mCacheViews中，再出现的时候是不会调用onBindViewHolder方法，而复用的第三条数据是从mRecyclerPool中取得，就会调用onBindViewHolder方法了。
 
-#### 4）所以这个问题就得出结论了（假设mCacheViews容量为默认值2）：
+#### 4）所以这个问题就得出结论了（假设mCacheViews容量为默认值2）
 
 - 如果一开始滑动的是新数据，那么滑动10个，就会走10个bindview方法。然后滑回去，会走10-2个bindview方法。一共18次调用。
 - 如果一开始滑动的是老数据，那么滑动10-2个，就会走8个bindview方法。然后滑回去，会走10-2个bindview方法。一共16次调用。
@@ -3595,16 +3570,15 @@ holder.recyclerView.setOnTouchListener { v, event ->
 
 这是因为RecyclerView默认是setNestedScrollingEnabled(true)，这个方法的含义是支持嵌套滚动的。也就是说当它嵌套在NestedScrollView中时,默认会随着NestedScrollView滚动而滚动,放弃了自己的滚动。所以给我们的感觉就是滞留、卡顿。所以我们将它设置为false就解决了卡顿问题，让他正常的滑动，不受外部影响。
 
-
 ## LeakCanary 原理
 
 参考博客
-https://www.cnblogs.com/jymblog/p/11656221.html
+<https://www.cnblogs.com/jymblog/p/11656221.html>
 
 通过 registerActivityLifecycleCallbacks 监听Activity或者Fragment 销毁时候的生命周期。（如果不想那个对象被监控则通过 AndroidExcludedRefs 枚举，避免被检测）
 
 ```java
-	 public void watch(Object watchedReference, String referenceName) {
+  public void watch(Object watchedReference, String referenceName) {
         if (this == DISABLED) {
             return;
         }
@@ -3803,9 +3777,9 @@ private final Runnable cleanupRunnable = new Runnable(){
         while(true) {
         //执行清理，并返回下次需要清理的时间。 
         long waitNanos=cleanup(System.nanoTime());
-      	if(waitNanos==-1)
-        	return;
-      	if(waitNanos>0){
+       if(waitNanos==-1)
+         return;
+       if(waitNanos>0){
           long waitMillis = waitNanos/1000000L;
           waitNanos -= (waitMillis*1000000L);
           synchronized (ConnectionPool.this){        
@@ -3822,7 +3796,7 @@ private final Runnable cleanupRunnable = new Runnable(){
 
 这个runnable会不停的调用cleanup方法清理线程池，并返回下一次清理的时间间隔，然后进入wait等待。
 
-#### 怎么清理的呢？看看源码：
+#### 怎么清理的呢？看看源码
 
 ```java
 long cleanup(long now) {    
@@ -3871,8 +3845,6 @@ long cleanup(long now) {
 
 也就是当如果空闲连接maxIdleConnections超过5个或者keepalive时间大于5分钟，则将该连接清理掉。
 
-
-
 - 5）这里有个问题，怎样属于空闲连接？
 
 其实就是有关刚才说到的一个方法acquire计数方法：
@@ -3919,7 +3891,6 @@ public class Request {
 ```
 
 #### 工厂模式
-
 
 工厂模式和建造者模式类似，区别就在于工厂模式侧重点在于对象的生成过程，而建造者模式主要是侧重对象的各个参数配置。例子有CacheInterceptor拦截器中又个CacheStrategy对象：
 
@@ -4015,13 +3986,13 @@ Lru算法缓存->弱引用缓存->磁盘缓存（如果设置了的话）
 
 > LinkHashMap 继承HashMap，在 HashMap的基础上，新增了双向链表结构，每次访问数据的时候，会更新被访问的数据的链表指针，具体就是先在链表中删除该节点，然后添加到链表头header之前，这样就保证了链表头header节点之前的数据都是最近访问的（从链表中删除并不是真的删除数据，只是移动链表指针，数据本身在map中的位置是不变的）
 
-### Glide加载一个一兆的图片（100 * 100），是否会压缩后再加载，放到一个300 * 300的view上会怎样，800*800呢，图片会很模糊，怎么处理？
+### Glide加载一个一兆的图片（100 *100），是否会压缩后再加载，放到一个300* 300的view上会怎样，800*800呢，图片会很模糊，怎么处理？
 
 *++因为你缓存机制无论是看博客还是看一些面试宝典，如果只是考原理或者定义，光把上面的文字背诵下来就可以了，但是背诵和真正的理解是两回事，自己没有形成感悟，不理解这个框架，只是一味的迎合面试，这个问题就可以卡住你，另外千万别和面试官嘚瑟，果然，这个面试的哥们，这块就卡住了，支支吾吾的半天没答上来，果然是只看了博客，没真正的阅读过源码++*
 
 当我们调整imageview的大小时，Picasso会不管imageview大小是什么，总是直接缓存整张图片，而Glide就不一样了，它会为每个不同尺寸的Imageview缓存一张图片，也就是说不管你的这张图片有没有加载过，只要imageview的尺寸不一样，那么Glide就会重新加载一次，这时候，它会在加载的imageview之前从网络上重新下载，然后再缓存。
 
-举个例子，如果一个页面的imageview是300 * 300像素，而另一个页面中的imageview是100 * 100像素，这时候想要让两个imageview像是同一张图片，那么Glide需要下载两次图片，并且缓存两张图片。
+举个例子，如果一个页面的imageview是300 *300像素，而另一个页面中的imageview是100* 100像素，这时候想要让两个imageview像是同一张图片，那么Glide需要下载两次图片，并且缓存两张图片。
 
 ```java
 public <R> LoadStatus load() {   
@@ -4104,7 +4075,7 @@ public class LoginInterceptorImpl implements IInterceptor {
   }
 }
 //使用
-ARouter.getInstance().build(ConfigConstants.SECOND_PATH)                         	.withString("msg", "123")                    
+ARouter.getInstance().build(ConfigConstants.SECOND_PATH)                          .withString("msg", "123")                    
 .navigation(this,new LoginNavigationCallbackImpl());    
 // 第二个参数是路由跳转的回调
 // 拦截的回调
@@ -4131,18 +4102,16 @@ public class LoginNavigationCallbackImpl  implements NavigationCallback{
 
 拦截器实现IInterceptor接口，使用注解@Interceptor，这个拦截器就会自动被注册了，同样是使用APT技术自动生成映射关系类。这里还有一个优先级参数priority，数值越小，就会越先执行。
 
-
 ## ButterKnife
 
 参考文章
-https://blog.csdn.net/xu_1215/article/details/80761862
+<https://blog.csdn.net/xu_1215/article/details/80761862>
 
 butterKnife 使用的是 APT 技术 也就是编译时注解，不同于运行时注解（在运行过程中通过反射动态地获取相关类，方法，参数等信息，效率低耗时等缺点），编译时注解 则是在代码编译过程中对注解进行处理（annotationProcessor技术），通过注解获取相关类，方法，参数等信息，然后在项目中生成代码，运行时调用，其实和直接手写代码一样，没有性能问题，只有编辑时效率问题。
 
 ButterKnife在Bind方法中 获取到DecorView，然后通过Activity和DecorView对象获取xx_ViewBinding类的构造对象，然后通过构造方法反射实例化了这个类 Constructor。
 
 在编写完demo之后，需要先build一下项目，之后可以在build/generated/source/apt/debug/包名/下面找到 对应的xx_ViewBinding类，查看bk 帮我们做的事情。
-
 
 ```java
 # xx_ViewBinding.java
@@ -4180,7 +4149,6 @@ Gradle插件升级到5.0版本之后ButterKnife将无法再被使用，R文件�
 
 答：由于JVM 内联优化的机制，编译器将指定的函数体插入并取代每一处调用该函数的地方（就是在方法编译前已经进行了赋值），从而节省了每次调用函数带来的额外时间开支。
 
-
 ## 介绍一下你们之前做的项目的架构
 
 这个问题大家就真实回答就好，重点是要说完后提出对自己项目架构的认同或不认同的观点，也就是要有自己的思考和想法。
@@ -4206,7 +4174,6 @@ View --> Controller，也就是反应View的一些用户事件（点击触摸事
 但是！但是！其实Android这种并称不上传统的MVC结构，因为Activity又可以叫View层又可以叫Controller层，所以我觉得这种Android默认的开发结构，其实称不上什么MVC项目架构，因为他本身就是Android一开始默认的开发形式，所有东西都往Activity中丢，然后能封装的封装一下，根本分不出来这些层级。当然这是我个人看法，可以都来讨论下。
 
 #### MVP
-
 
 ##### 架构介绍
 
@@ -4242,7 +4209,7 @@ View --> ViewModel -->View，双向绑定，数据改动可以反映到界面，
 
 ### 具体说说你理解的MVVM
 
-#### 1）先说说MVVM是怎么解决了其他两个架构所在的缺陷和问题：
+#### 1）先说说MVVM是怎么解决了其他两个架构所在的缺陷和问题
 
 - 解决了各个层级之间耦合度太高的问题，也就是更好的完成了解耦。MVP层中，Presenter还是会持有View的引用，但是在MVVM中，View和Model进行双向绑定，从而使viewModel基本只需要处理业务逻辑，无需关系界面相关的元素了。
 - 解决了代码量太多，或者模式化代码太多的问题。由于双向绑定，所以UI相关的代码就少了很多，这也是代码量少的关键。而这其中起到比较关键的组件就是DataBinding，使所有的UI变动都交给了被观察的数据模型。
@@ -4262,7 +4229,7 @@ View --> ViewModel -->View，双向绑定，数据改动可以反映到界面，
 
 优秀的架构思想+官方支持=强大
 
-## ViewModel 
+## ViewModel
 
 ### ViewModel是什么，说说你所理解的ViewModel？
 
@@ -4272,13 +4239,13 @@ ViewModel是MVVM架构的一个层级，用来联系View和model之间的关系�
 
 官方是这么介绍的，这里面有两个信息：
 
-#### 注重生命周期的方式。
+#### 注重生命周期的方式
 
 由于ViewModel的生命周期是作用于整个Activity的，所以就节省了一些关于状态维护的工作，最明显的就是对于屏幕旋转这种情况，以前对数据进行保存读取，而ViewModel则不需要，他可以自动保留数据。
 
 其次，由于ViewModel在生命周期内会保持局部单例，所以可以更方便Activity的多个Fragment之间通信，因为他们能获取到同一个ViewModel实例，也就是数据状态可以共享了。
 
-#### 存储和管理界面相关的数据。
+#### 存储和管理界面相关的数据
 
 ViewModel层的根本职责，就是负责维护界面上UI的状态，其实就是维护对应的数据，因为数据会最终体现到UI界面上。所以ViewModel层其实就是对界面相关的数据进行管理，存储等操作。
 
@@ -4290,7 +4257,6 @@ ViewModel层的根本职责，就是负责维护界面上UI的状态，其实就
 
 #### 解决了什么问题呢？
 
-
 其实上面已经说过一些了，比如：
 
 - 1）不会因为屏幕旋转而销毁，减少了维护状态的工作
@@ -4299,17 +4265,15 @@ ViewModel层的根本职责，就是负责维护界面上UI的状态，其实就
 
 ### 说说ViewModel原理
 
-#### 首先说说是怎么保存生命周期。
+#### 首先说说是怎么保存生命周期
 
 ViewModel2.0之前呢，其实原理是在Activity上add一个HolderFragment，然后设置setRetainInstance(true)方法就能让这个Fragment在Activity重建时存活下来，也就保证了ViewModel的状态不会随Activity的状态所改变。
 
 2.0之后，其实是用到了Activity的onRetainNonConfigurationInstance()和getLastNonConfigurationInstance()这两个方法，相当于在横竖屏切的时候会保存ViewModel的实例，然后恢复，所以也就保证了ViewModel的数据。
 
-
 #### 再说说怎么保证作用域内唯一实例
 
 首先，ViewModel的实例是通过反射获取的，反射的时候带上application的上下文，这样就保证了不会持有Activity或者Fragment等View的引用。然后实例创建出来会保存到一个ViewModelStore容器里面，其实也就是一个集合类，这个ViewModelStore 类其实就是保存在界面上的那个实例，而我们的ViewModel就是里面的一个集合类的子元素。
-
 
 所以我们每次获取的时候，首先看看这个集合里面有无我们的ViewModel，如果没有就去实例化，如果有就直接拿到实例使用，这样就保证了唯一实例。最后在界面销毁的时候，会去执行ViewModelStore的clear方法，去清除集合里面的ViewModel数据。一小段代码说明下：
 
@@ -4350,7 +4314,6 @@ protected void onDestroy() {
 ### ViewModel怎么实现自动处理生命周期？
 
 为什么在旋转屏幕后不会丢失状态？为什么ViewModel可以跟随Activity/Fragment的生命周期而又不会造成内存泄漏呢？
-
 
 这三个问题很类似，都是关于生命周期的问题，其实也就是问为什么ViewModel能管理生命周期，并且不会因为重建等情况造成影响。
 
@@ -4622,7 +4585,6 @@ public class ExtendClass extends BaseClass  {
 - 自动完成一些规律性的代码。
 - 自动生成java代码，减轻开发者的工作量。
 
-
 ## 线程与协程
 
 可借鉴 郭霖发表的 —— [一看就会！协程原来是这样啊~](https://mp.weixin.qq.com/s/nXfweTaOCpm6Bj34rW-wLA)
@@ -4789,10 +4751,9 @@ fun updateUI3(){}
 
 Jetpack 中定义的协程作用域（viewModelScope 和 lifecycleScope）可以帮助你自动取消任务，下次再详细说明，其他情况就需要自行进行绑定和取消了。
 
-
 ## Android 和WebView 通信
 
-### js调用android 
+### js调用android
 
 // myObj 为在js中使用的对象名称 JavaScriptInterfaces 是我们自定义的一个类。
 
@@ -4801,7 +4762,6 @@ webView.addJavascriptInterface(new JavaScriptInterfaces(), "myObj");
 ```
 
 myObj.xx() //js方法
-
 
 #### 通过WebView的addJavascriptInterface（）进行对象映射
 
@@ -4817,8 +4777,8 @@ public class AndroidtoJs extends Object {
 mWebView.addJavascriptInterface(new AndroidtoJs(), "test");
 //js中：
 function callAndroid(){   
-	// 由于对象映射，所以调用test对象等于调用Android映射的对象   
-	test.hello("js调用了android中的hello方法");
+ // 由于对象映射，所以调用test对象等于调用Android映射的对象   
+ test.hello("js调用了android中的hello方法");
 }
 ```
 
@@ -4906,7 +4866,7 @@ webView.evaluateJavascript(String.format("javascript:callH5Re('测试数据')"),
 - 这时候客户端会生成一个TCP数据包。这个数据包的TCP头部有几个重要信息：SYN、ACK、Seq、Ack。
 
 > SYN，同步序列编号，是TCP/IP建立连接时使用的握手信号，如果这个值为1就代表是连接消息。  
-> ACK，确认标志，如果这个值为1就代表是确认消息。Seq，数据包序号，是发送数据的一个顺序编号。    
+> ACK，确认标志，如果这个值为1就代表是确认消息。Seq，数据包序号，是发送数据的一个顺序编号。
 > Ack Number，确认数字号，是接收数据的一个顺序编号。
 
 - 所以客户端就生成了这样一个数据包，其中头部信息的控制位SYN设置为1，代表连接。SEQ设置一个随机数，代表初始序号，比如100。
@@ -5003,7 +4963,7 @@ A发送断开消息给B，B回一条消息表示我收到了，这个过程就�
 - 因为是无连接的，所以就不需要用到字节流，直接每次丢一个数据报给你，接收方也只能接受一个数据报（不能和其他发送方的数据报混淆）。（基于数据报的）
 
 如果你还是有点晕，可以看看这篇文章（亚当和夏娃），很形象的比喻：
-https://www.zhihu.com/question/51388497?sort=created
+<https://www.zhihu.com/question/51388497?sort=created>
 
 ### socket和WebSocket
 
@@ -5017,13 +4977,12 @@ https://www.zhihu.com/question/51388497?sort=created
 
 如果硬要说这两者有关系，那就是WebSocket协议也用到了TCP连接，而TCP连接用到了Socket的API。
 
-
 ### Https的连接建立过程
 
 说完了HTTP和TCP/IP，再说说HTTPS。
 
 上一篇文章说了HTTPS是怎么保证数据安全传输
-https://mp.weixin.qq.com/s/dbmwBVxHkvQ0fzWaSdtPYg
+<https://mp.weixin.qq.com/s/dbmwBVxHkvQ0fzWaSdtPYg>
 
 其中主要就是用到了数字证书。
 

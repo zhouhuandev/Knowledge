@@ -162,8 +162,6 @@ java中的序列化方式Serializable效率比较低，主要有以下原因：
 
 ### GC收集算法有哪些？他们的特点是什么？
 
-
-
 ![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/5D45C7F7822043ABBECECE5F14E2B744/10999)
 
 ![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/99A1E29ABA224743B57120389B63EC11/11004)

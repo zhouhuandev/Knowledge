@@ -1764,7 +1764,7 @@ Looper的创建是通过`Looper.prepare`方法实现的，而在prepare方法中
 
 为了app不挂掉，就要保证主线程一直运行存在，使用死循环代码阻塞在`msgQueue.next()`中的`nativePollOnce()`方法里 ，主线程就会挂起休眠释放cpu，线程就不会退出。Looper死循环之前，在`ActivityThread.main()`中就会创建一个 `Binder 线程（ApplicationThread）`，接收系统服务AMS发送来的事件。当系统有消息产生（其实系统每 16ms 会发送一个刷新 UI 消息唤醒）会通过`epoll机制` 向`pipe管道`写端写入数据 就会发送消息给 looper 接收到消息后处理事件，保证主线程的一直存活。只有在主线程中处理超时才会让app崩溃 也就是ANR。
 
-- 1. 主线程本身就是需要一只运行的，因为要处理各个View，界面变化。所以需要这个死循环来保证主线程一直执行下去，不会被退出。
+- 1. 主线程本身就是需要一直运行的，因为要处理各个View，界面变化。所以需要这个死循环来保证主线程一直执行下去，不会被退出。
 - 2. 真正会卡死的操作是在某个消息处理的时候操作时间过长，导致掉帧、ANR，而不是loop方法本身。
 - 3. 在主线程以外，会有其他的线程来处理接受其他进程的事件，**比如Binder线程（ApplicationThread）**，会接受AMS发送来的事件
 - 4. 在收到跨进程消息后，会交给主线程的 `Hanlder` 再进行消息分发。所以Activity的生命周期都是依靠主线程的`Looper.loop`，当收到不同Message时则采用相应措施，比如收到`msg=H.LAUNCH_ACTIVITY`，则调用`ActivityThread.handleLaunchActivity()`方法，最终执行到onCreate方法。
@@ -2185,7 +2185,7 @@ Handler(Looper.getMainLooper()).post {
 
 例如静态变量持有当前Activity的对象，从而导致Activity无法释放。
 
-#### 单例模式倒是内存泄露
+#### 单例模式导致内存泄露
 
 单体模式持有当前的Activity的内部对象，从而导致内存泄露。因为单例模式 的特点是其生命周期和Application保持一致，因此Activity对象无法被及时释放。
 
@@ -2436,7 +2436,7 @@ class BitmapBinder :Binder(){
 
 ### 线程优化
 
-线程优化的思想是采用线程池，避免程序中存在大量的Thread。线程池可以重用内部的线程，从而避免线程的创建和销毁所带来的性能开销，同事线程池还能有效地控制线程池的最大并发数，避免大量的线程因互相抢占系统资源从而导致阻塞现象发生。因此实际开发中，我们要尽量采用线程池，而不是每次对创建一个Thread对象。
+线程优化的思想是采用线程池，避免程序中存在大量的Thread。线程池可以重用内部的线程，从而避免线程的创建和销毁所带来的性能开销，同时线程池还能有效地控制线程池的最大并发数，避免大量的线程因互相抢占系统资源从而导致阻塞现象发生。因此实际开发中，我们要尽量采用线程池，而不是每次对创建一个Thread对象。
 
 ### 启动优化
 
@@ -2758,7 +2758,9 @@ singleInstance：单实例模式。该模式除了具备 singleTask 模式的所
 1. 通过 AndroidMenifest 为 Activity 指定启动模式，如下所示：
 
 ```xml
-<activity     android:name=".activity.protocol.ProtocolActivity"     android:launchMode="singleTask"/>
+<activity     
+          android:name=".activity.protocol.ProtocolActivity"     
+          android:launchMode="singleTask"/>
 ```
 
 2. 通过 Intent 中设置标志位来为 Activity 指定启动模式，如下所示：
@@ -2912,7 +2914,7 @@ Android 会为每个进程分配独立的虚拟内存空间，每个进程的虚
 
 大意就是：
 
-1. 避免内核空间到数据接受端的直接的数据拷贝；数据接受端接收数据的时候，由于数据大小不确定，要么分配一个很大的空间装数据，要么动态扩容；两种方式都有问题；Binder使用mmap直接把接受端的内存映射到内存空间，避免了数据的直接拷贝；另外通过data_buffer等方式让数据仅包含定长的消息头，解决了接受端内存分配的问题。
+1. 避免内核空间到数据接受端的直接的数据拷贝；数据接受端接收数据的时候，由于数据大小不确定，要么分配一个很大的空间装数据，要么动态扩容；两种方式都有问题；Binder使用mmap直接把接收端的内存映射到内存空间，避免了数据的直接拷贝；另外通过data_buffer等方式让数据仅包含定长的消息头，解决了接收端内存分配的问题。
 
 2. 需要管理跨进程传递的代理对象的生命周期；这一点其他机制无法完成；Binder驱动通过引用计数技术解决这个问题。
 

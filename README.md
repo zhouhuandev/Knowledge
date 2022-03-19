@@ -3685,7 +3685,7 @@ Recycleview有四级缓存，分别是mAttachedScrap(屏幕内)，mCacheViews(�
 #### 5）总结，问题怎么答呢？
 
 - 四级缓存和流程说一下。
-- 滑动10个，再滑回去，bindview可以是19次调用，可以是16次调用。
+- 滑动10个，再滑回去，bindview可以是18次调用，可以是16次调用。
 - 缓存的其实就是缓存item的view，在Recycleview中就是viewholder。
 - cachedView就是mCacheViews缓存区中的view，是不需要重新绑定数据的。
 

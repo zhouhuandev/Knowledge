@@ -3691,21 +3691,22 @@ Recycleview有四级缓存，分别是mAttachedScrap(屏幕内)，mCacheViews(�
 
 ### 如何实现RecyclerView的局部更新，用过payload吗,notifyItemChange方法中的参数？
 
-- notifyDataSetChanged()，刷新全部可见的item。*notifyItemChanged(int)，刷新指定item。
-- notifyItemRangeChanged(int,int)，从指定位置开始刷新指定个item。
-- notifyItemInserted(int)、notifyItemMoved(int)、notifyItemRemoved(int)。插入、移动一个并自动刷新。
-- notifyItemChanged(int, Object)，局部刷新。
+- `notifyDataSetChanged()`，刷新全部可见的item。
+- `notifyItemChanged(int)`，刷新指定item。
+- `notifyItemRangeChanged(int,int)`，从指定位置开始刷新指定个item。
+- `notifyItemInserted(int)`、`notifyItemMoved(int)`、`notifyItemRemoved(int)`。插入、移动一个并自动刷新。
+- `notifyItemChanged(int, Object)`，局部刷新。
 
-可以看到，关于view的局部刷新就是notifyItemChanged(int, Object)方法，下面具体说说：
+可以看到，关于view的局部刷新就是 `notifyItemChanged(int, Object)` 方法，下面具体说说：
 
 notifyItemChange有两个构造方法：
 
-- notifyItemChanged(int position, @Nullable Object payload)
-- notifyItemChanged(int position)
+- `notifyItemChanged(int position, @Nullable Object payload)`
+- `notifyItemChanged(int position)`
 
-其中payload参数可以认为是你要刷新的一个标示，比如我有时候只想刷新itemView中的textview,有时候只想刷新imageview？又或者我只想某一个view的文字颜色进行高亮设置？那么我就可以通过payload参数来标示这个特殊的需求了。
+其中 `payload` 参数可以认为是你要刷新的一个标识，比如我有时候只想刷新 `itemView` 中的 `textview`,有时候只想刷新 `imageview` ？又或者我只想某一个view的文字颜色进行高亮设置？那么我就可以通过 `payload` 参数来标示这个特殊的需求了。
 
-具体怎么做呢？比如我调用了notifyItemChanged（14,"changeColor"）,那么在onBindViewHolder回调方法中做下判断即可：
+具体怎么做呢？比如我调用了 `notifyItemChanged（14,"changeColor"）`,那么在 `onBindViewHolder` 回调方法中做下判断即可：
 
 ```java
 @Override
@@ -3730,14 +3731,14 @@ public void onBindViewHolder(ViewHolderholder, int position, List<Object> payloa
 之前说过解决滑动冲突的办法有两种：内部拦截法和外部拦截法。这里我提供一种内部拦截法，还有一些其他的办法大家可以自己思考下。
 
 ```kotlin
-holder.recyclerView.setOnTouchListener { v, event ->    
-                                        when(event.action){    
-                                          //当按下操作的时候，就通知父view不要拦截，拿起操作就设置可以拦截，正常走父view的滑动。      
-                                          MotionEvent.ACTION_DOWN,MotionEvent.ACTION_MOVE -> v.parent.requestDisallowInterceptTouchEvent(true)    
-                                          MotionEvent.ACTION_UP -> v.parent.requestDisallowInterceptTouchEvent(false)  
-                                        }
-                                        false
-                                       }
+holder.recyclerView.setOnTouchListener { v, event ->
+    when(event.action){
+        //当按下操作的时候，就通知父view不要拦截，拿起操作就设置可以拦截，正常走父view的滑动。
+        MotionEvent.ACTION_DOWN,MotionEvent.ACTION_MOVE -> v.parent.requestDisallowInterceptTouchEvent(true)
+        MotionEvent.ACTION_UP -> v.parent.requestDisallowInterceptTouchEvent(false)
+    }
+    false
+}
 ```
 
 2）关于ScrclerView的滑动冲突还是同样的解决办法，就是进行事件拦截。还有一个办法就是用Nestedscrollview代替ScrollView，Nestedscrollview是官方为了解决滑动冲突问题而设计的新的View。它的定义就是支持嵌套滑动的ScrollView。

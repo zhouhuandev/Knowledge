@@ -2991,46 +2991,85 @@ Hook 过程：
 
 通过 SetContentView()，调用 到PhoneWindow ，后实例DecorView ，通过 LoadXmlResourceParser() 进行IO操作 解析xml文件 通过反射 创建出View，并将View绘制在 DecorView上，这里的绘制则交给了ViewRootImpl 来完成，通过performTraversals() 触发绘制流程，performMeasure 方法获取View的尺寸，performLayout 方法获取View的位置 ，然后通过 performDraw 方法遍历View 进行绘制。
 
-### View.post
+### `onCreate()`、`onResume()` 中可以获取View的宽高吗？怎么做？ `View.post{}` 为什么可以获取？
 
-参考博客1
-<https://blog.csdn.net/scnuxisan225/article/details/49815269>
+View的宽高是在onLayout阶段才能最终确定的，而在Activity#onCreate中并不能保证View已经执行到了onLayout方法，也就是说Activity的声明周期与View的绘制流程并不是一一绑定。所以onCreate() 和 onResume() 中获取不到View的宽高值。以Handler为基础，`View.post()` 将传入任务的执行时机调整到 View 绘制完成之后。
 
-参考博客2
-<https://www.cnblogs.com/dasusu/p/8047172.html>
+原因：View 的测绘绘制流程就是从 ViewRootImpl#performTraversals() 开始的，而这个方法的调用是在 onResume() 方法之后，所以在 onCreate() 和 onResume() 方法中拿不到 View 的测量值。
 
-想要在 onCreate 中获取到View宽高的方法有：
+### View的 `getWidth()` 和 `getMeasuredWidth()` 有什么区别吗？
 
-- ViewTreeObserver 监听界面绘制事件，在layout时调用，使用完毕后记得removeListener。
-- 就是View.post
+View的高宽是由View本身和Parent容器共同决定的。
 
-源码分析:
+`getMeasuredWidth()` 和 `getWidth()` 分别对应于视图绘制的measure和layout阶段。
+
+- `getMeasuredWidth()` 获取的是View原始的大小，也就是这个View在XML文件中配置或者是代码中设置的大小。
+- `getWidth()` 获取的是这个View最终显示的大小，这个大小有可能等于原始的大小，也有可能不相等。比如说，在父布局的onLayout()方法或者该View的onDraw()方法里调用measure(0, 0)，二者的结果可能会不同（measure中的参数可以自己定义）。
+
+#### getWidth()
 
 ```java
-public boolean post(Runnable action) {
-
-    final AttachInfo attachInfo = mAttachInfo;
-    if (attachInfo != null) {
-        return attachInfo.mHandler.post(action);
+    /**
+     * Return the width of the your view.
+     * @return The width of your view, in pixels.
+     */
+    @ViewDebug.ExportedProperty(category = "layout")
+    public final int getWidth() {
+        return mRight - mLeft;
     }
-    getRunQueue().post(action);
-    return true;
-}
 ```
 
-View.post(runable) 通过将runable 封装为HandlerAction对象，如果attachInfo为null 则将Runnable事件 添加到等待数组中， attachInfo初始化是在 dispatchAttachedToWindow 方法，置空则是在detachedFromWindow方法中，所以在这两个方法生命周期中，调用View.post方法都是直接让 mAttachInfo.handler 执行。
+从源码上看，`getWidth()` 是根据 `mRight` 和 `mLeft` 之间的差值计算出来的，需要在布局之后才能确定它们的坐标，也就是说布局后在 `onLayout()` 方法里才能调用 `getWidth()` 来获取。因此，`getWidth()` 获取的宽度是在View设定好布局后整个View的宽度。
+
+#### getMeasuredWidth()
 
 ```java
-ViewRootImpl.class
-
-mAttachInfo = new View.AttachInfo(mWindowSession, mWindow, display, this, mHandler, this, context);
-
-final ViewRootHandler mHandler = new ViewRootHandler();
+    /**
+     * Like {@link #getMeasuredWidthAndState()}, but only returns the
+     * raw width component (that is the result is masked by
+     * {@link #MEASURED_SIZE_MASK}).
+     *
+     * @return The raw measured width of this view.
+     */
+    public final int getMeasuredWidth() {
+        return mMeasuredWidth & MEASURED_SIZE_MASK;
+    }
 ```
 
-通过查找 mAttachInfo.handler 是在主线程中声明的，没有传参则 Looper 为主线程Looper，所以在View.post中可以更新UI。
+从源码上看，`getMeasuredWidth()` 获取的是 `mMeasuredWidth` 的这个值。这个值是一个8位的十六进制的数字，高两位表示的是这个measure阶段的Mode的值，具体可以查看MeasureSpec的原理。这里 `mMeasuredWidth & MEASURED_SIZE_MASK` 表示的是测量阶段结束之后，View真实的值。而且这个值会在调用了 `setMeasuredDimensionRaw()` 函数之后会被设置。所以 `getMeasuredWidth()` 的值是measure阶段结束之后得到的View的原始的值。
 
-但是为什么可以在View.post()中获取控件尺寸呢？
+```java
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        setMeasuredDimension(getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec),
+                getDefaultSize(getSuggestedMinimumHeight(), heightMeasureSpec));
+    }
+
+    protected final void setMeasuredDimension(int measuredWidth, int measuredHeight) {
+        boolean optical = isLayoutModeOptical(this);
+        if (optical != isLayoutModeOptical(mParent)) {
+            Insets insets = getOpticalInsets();
+            int opticalWidth  = insets.left + insets.right;
+            int opticalHeight = insets.top  + insets.bottom;
+
+            measuredWidth  += optical ? opticalWidth  : -opticalWidth;
+            measuredHeight += optical ? opticalHeight : -opticalHeight;
+        }
+        setMeasuredDimensionRaw(measuredWidth, measuredHeight);
+    }
+
+    private void setMeasuredDimensionRaw(int measuredWidth, int measuredHeight) {
+        mMeasuredWidth = measuredWidth;
+        mMeasuredHeight = measuredHeight;
+
+        mPrivateFlags |= PFLAG_MEASURED_DIMENSION_SET;
+    }
+```
+
+总结一下，`getMeasuredWidth` 是measure阶段获得的View的原始宽度，`getWidth` 是layout阶段完成后，其在父容器中所占的最终宽度
+
+### View.post{} 为什么可以获取控件尺寸？
+
+#### 为什么可以在View.post()中获取控件尺寸呢？
 
 android 运行是消息驱动，通过源码 可以看到 ViewRootImpl 中 是先将 TraversalRunnable添加到 Handler 中运行的 之后 才是 View.post()。
 
@@ -3057,23 +3096,76 @@ void doTraversal() {
 
 因此，这个时候Handler正在执行着TraversalRunnable这个Runnable，而我们post的Runnable要等待TraversalRunnable执行完才会去执行，而TraversalRunnable这里面又会进行measure,layout和draw流程，所以等到执行我们的Runnable时，此时的View就已经被measure过了，所以获取到的宽高就是measure过后的宽高。
 
-### 动画(4种类型)
+参考博客1
+<https://blog.csdn.net/scnuxisan225/article/details/49815269>
 
-View 动画的作用对象是View，它支持4中动画效果，分别是平移动画(TranslateAnimation<translate>)、缩放动画(ScaleAnimation<scale>)、旋转动画(RotateAnimation<rotate>)、透明动画(AlphaAnimation<alpha>)。除了这四种典型的变换效果外，帧动画也属于View动画，但是帧动画的表现形式和上面的四种变换效果不大一样。
+参考博客2
+<https://www.cnblogs.com/dasusu/p/8047172.html>
 
-#### 帧动画
+想要在 onCreate 中获取到View宽高的方法有：
 
-**帧动画** ：AnimationDrawable 实现，在资源文件中存放多张图片，占用内存多，容易OOM。
+#### View.post(runnable)
 
-#### 补间动画
+```java
+view.post(new Runnable() {
+            @Override
+            public void run() {
+                int width = view.getWidth();
+                int measuredWidth = view.getMeasuredWidth();
+                Log.i(TAG, "width: " + width);
+                Log.i(TAG, "measuredWidth: " + measuredWidth);
+            }
+        });
+```
 
-**补间动画** ：作用对象只限于 View 视觉改变，并没有改变View 的 xy 坐标，支持 平移、缩放、旋转、透明度，但是移动后，响应时间的位置还在 原处，补间动画在执行的时候，直接导致了 View 执行 onDraw() 方法。补间动画的核心本质就是在一定的持续时间内，不断改变 Matrix 变换，并且不断刷新的过程。
+利用Handler通信机制，发送一个Runnable到MessageQueue中，当View布局处理完成时，自动发送消息，通知UI进程。借此机制，巧妙获取View的高宽属性，代码简洁，相比ViewTreeObserver监听处理，还不需要手动移除观察者监听事件。
 
-#### 属性动画
+##### 源码分析 View.post(runnable)
 
-**属性动画** ：ObjectAnimator、ValuetAnimator、AnimatorSet 可以是任何View，动画选择也比较多，其中包含 差速器，可以控制动画速度，节奏。类型估值器 可以根据当前属性改变的百分比计算改变后的属性值 。因为ViewGroup 在 getTransformedMotionEvent方法中通过子 View 的 hasIdentityMatrix() 来判断子 View 是否经过位移之类的属性动画。调用子 View 的 getInverseMatrix() 做「反平移」操作，然后判断处理后的触摸点是否在子 View 的边界范围内。
+```java
+public boolean post(Runnable action) {
 
-提升动画 可以打开 硬件加速，使GPU 承担一部分CPU的工作。
+    final AttachInfo attachInfo = mAttachInfo;
+    if (attachInfo != null) {
+        return attachInfo.mHandler.post(action);
+    }
+    getRunQueue().post(action);
+    return true;
+}
+```
+
+View.post(runable) 通过将runable 封装为HandlerAction对象，如果attachInfo为null 则将Runnable事件 添加到等待数组中， attachInfo初始化是在 dispatchAttachedToWindow 方法，置空则是在detachedFromWindow方法中，所以在这两个方法生命周期中，调用View.post方法都是直接让 mAttachInfo.handler 执行。
+
+```java
+ViewRootImpl.class
+
+mAttachInfo = new View.AttachInfo(mWindowSession, mWindow, display, this, mHandler, this, context);
+
+final ViewRootHandler mHandler = new ViewRootHandler();
+```
+
+通过查找 mAttachInfo.handler 是在主线程中声明的，没有传参则 Looper 为主线程Looper，所以在View.post中可以更新UI。
+
+#### ViewTreeObserver 监听界面绘制事件
+
+监听View的onLayout()绘制过程，一旦layout触发变化，立即回调onLayoutChange方法。
+注意，使用完也要主要调用removeOnGlobalListener()方法移除监听事件。避免后续每一次发生全局View变化均触发该事件，影响性能。
+
+```java
+ViewTreeObserver vto = view.getViewTreeObserver();
+        vto.addOnGlobalLayoutListener(new OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                view.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                Log.i(TAG, "width: " + view.getWidth());
+                Log.i(TAG, "height: " + view.getHeight());
+            }
+        });
+```
+
+#### View.measure(int widthMeasureSpec, int heightMeasureSpec)
+
+除了在 `onCreate()` 中获得View的高宽，还可以在Activity的 `onWindowFocusChanged()` 方法中获得高宽。
 
 ### 说说View/ViewGroup的绘制流程
 
@@ -3195,6 +3287,24 @@ private void invalidateRectOnScreen(Rect dirty) {
 参考文章中有一段总结挺好的：
 
 > 虽然两者都是用来触发绘制流程，但是在measure和layout过程中，只会对 flag 设置为 FORCE_LAYOUT 的情况进行重新测量和布局，而draw方法中只会重绘flag为 dirty 的区域。requestLayout 是用来设置FORCE_LAYOUT标志，invalidate 用来设置 dirty 标志。所以 requestLayout 只会触发 measure 和 layout，invalidate 只会触发 draw。
+
+### 动画(4种类型)
+
+View 动画的作用对象是View，它支持4中动画效果，分别是平移动画(TranslateAnimation<translate>)、缩放动画(ScaleAnimation<scale>)、旋转动画(RotateAnimation<rotate>)、透明动画(AlphaAnimation<alpha>)。除了这四种典型的变换效果外，帧动画也属于View动画，但是帧动画的表现形式和上面的四种变换效果不大一样。
+
+#### 帧动画
+
+**帧动画** ：AnimationDrawable 实现，在资源文件中存放多张图片，占用内存多，容易OOM。
+
+#### 补间动画
+
+**补间动画** ：作用对象只限于 View 视觉改变，并没有改变View 的 xy 坐标，支持 平移、缩放、旋转、透明度，但是移动后，响应时间的位置还在 原处，补间动画在执行的时候，直接导致了 View 执行 onDraw() 方法。补间动画的核心本质就是在一定的持续时间内，不断改变 Matrix 变换，并且不断刷新的过程。
+
+#### 属性动画
+
+**属性动画** ：ObjectAnimator、ValuetAnimator、AnimatorSet 可以是任何View，动画选择也比较多，其中包含 差速器，可以控制动画速度，节奏。类型估值器 可以根据当前属性改变的百分比计算改变后的属性值 。因为ViewGroup 在 getTransformedMotionEvent方法中通过子 View 的 hasIdentityMatrix() 来判断子 View 是否经过位移之类的属性动画。调用子 View 的 getInverseMatrix() 做「反平移」操作，然后判断处理后的触摸点是否在子 View 的边界范围内。
+
+提升动画 可以打开 硬件加速，使GPU 承担一部分CPU的工作。
 
 ### Window中的token是什么，有什么用？
 

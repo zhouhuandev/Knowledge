@@ -2161,6 +2161,22 @@ Handler(Looper.getMainLooper()).post {
 
 ## Android 性能优化
 
+> [面试官: 说一下你做过哪些性能优化?](https://juejin.cn/post/6844904105438134286)
+
+主要介绍了一下10点性能优化内容，可供参考
+
+- [1、你对 APP 的启动有过研究吗? 有做过相关的启动优化吗?](https://juejin.cn/post/6844904105438134286#heading-1)
+- [2、有做过相关的内存优化吗?](https://juejin.cn/post/6844904105438134286#heading-2)
+- [3、你在项目中有没有遇见卡顿问题？是怎么排查卡顿？又是怎么优化的?](https://juejin.cn/post/6844904105438134286#heading-3)
+- [4、怎么保证 APP 的稳定运行?](https://juejin.cn/post/6844904105438134286#heading-4)
+- [5、说说你在项目中网络优化?](https://juejin.cn/post/6844904105438134286#heading-5)
+- [6、你在项目中有用过哪些存储方式? 对它们的性能有过优化吗？](https://juejin.cn/post/6844904105438134286#heading-6)
+- [7、你在项目中有做过自定义 View 吗？有对它做过什么优化？](https://juejin.cn/post/6844904105438134286#heading-7)
+- [8、你们项目的耗电量怎么样? 有做过优化吗?](https://juejin.cn/post/6844904105438134286#heading-8)
+- [9、有做过日志优化吗?](https://juejin.cn/post/6844904105438134286#heading-9)
+- [10、你们 APK 有多大？有做过 APK 体积相关的优化吗?](https://juejin.cn/post/6844904105438134286#heading-10)
+
+
 ### 布局优化
 
 布局优化的思想很简单，，就是尽量减少布局文件的层级，这个道理是很浅显的，布局中的层级少了，这就意味着Android绘制时的工作量少了，那么程序的性能自然就高了。

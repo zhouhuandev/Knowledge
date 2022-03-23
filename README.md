@@ -144,7 +144,7 @@ java中的序列化方式Serializable效率比较低，主要有以下原因：
 
 ![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/B01A255056B949E5BB58FC1F109DE0C6/10970)
 
-### java对象会不会分配在栈中呢
+### Java对象会不会分配在栈中呢
 
 当然会的
 

@@ -432,6 +432,49 @@ Java语言提供了 **volatile** 和 **synchronized** 两个关键字来保证�
 - 保证⽅法内部或代码块内部资源（数据）的互斥访问。即同⼀时间、由同⼀个 Monitor 监视的代码，最多只能有⼀个线程在访问
 - 保证线程之间对监视资源的数据同步。即，任何线程在获取到 Monitor后的第⼀时间，会先将共享内存中的数据复制到⾃⼰的缓存中；任何线程在释放 Monitor 的第⼀时间，会先将缓存中的数据复制到共享内存中。
 
+#### MarkWord 锁升级表
+
+<table style="text-align:center">
+  <tr>
+    <th>状态</th>
+    <th>23</th>
+    <th>2</th>
+    <th>4</th>
+    <th>1</th>
+    <th>2</th>
+  </tr>
+  <tr>
+    <td>无锁</td>
+    <td colspan="2">hashcode</td>
+    <td>age</td>
+    <td>0</td>
+    <td>01</td>
+  </tr>
+  <tr>
+    <td>偏向锁</td>
+    <td>thread</td>
+    <td>时间戳</td>
+    <td>age</td>
+    <td>1</td>
+    <td>01</td>
+  </tr>
+  <tr>
+    <td>轻量级锁</td>
+    <td colspan="4">指向栈中锁的指针</td>
+    <td>00</td>
+  </tr>
+  <tr>
+    <td>重量级锁</td>
+    <td colspan="4">指向重量级锁的指针</td>
+    <td>10</td>
+  </tr>
+  <tr>
+    <td>GC</td>
+    <td colspan="4"></td>
+    <td>11</td>
+  </tr>
+</table>
+
 ### Volatile
 
 - 保证加了 volatile 关键字的字段的操作具有同步性，以及对 long 和 double 的操作的原⼦性（long double 原⼦性这个简单说⼀下就⾏）。因此 volatile 可以看做是简化版的 synchronized。

@@ -432,16 +432,77 @@ Java语言提供了 **volatile** 和 **synchronized** 两个关键字来保证�
 - 保证⽅法内部或代码块内部资源（数据）的互斥访问。即同⼀时间、由同⼀个 Monitor 监视的代码，最多只能有⼀个线程在访问
 - 保证线程之间对监视资源的数据同步。即，任何线程在获取到 Monitor后的第⼀时间，会先将共享内存中的数据复制到⾃⼰的缓存中；任何线程在释放 Monitor 的第⼀时间，会先将缓存中的数据复制到共享内存中。
 
-#### MarkWord 锁升级表
+#### Synchronize应用场景
 
-<table style="text-align:center">
+Synchronize一般应用于以下几个场景：
+
+- 修饰实例方法，对当前实例对象（this）加锁
+
+```java
+    public synchronized void lockMethod() {
+        System.out.println("lock method");
+    }
+```
+
+- 修饰静态方法，对当前类对象（Class对象）加锁
+
+```java
+    public static synchronized void lockStaticMethod() {
+        System.out.println("lock static method");
+    }
+```
+
+- 修饰代码块，指定对某个对象进行加锁
+
+```java
+    Object object = new Object();
+
+    public void lockObject() {
+        synchronized (object) {
+            System.out.println("lock object");
+        }
+    }
+```
+
+根据锁的力度来选择使用哪一种，比如使用静态方法上锁，锁的力度是整个Class对象，如果大量线程都在使用Class对象作为锁对象，那么锁的粒度很大。比如`System.out.println()`这种方式底层是对PrintStream上锁，但PrintSteam又是单例的，因此在此代码中如果大量使用`System.out.println()`，性能会受影响。
+
+```java
+    /**
+     * Prints a String and then terminate the line.  This method behaves as
+     * though it invokes {@link #print(String)} and then
+     * {@link #println()}.
+     *
+     * @param x  The {@code String} to be printed.
+     */
+    public void println(String x) {
+        synchronized (this) {
+            print(x);
+            newLine();
+        }
+    }
+```
+
+#### Synchronize锁的膨胀升级过程
+
+Synchronize在1.6版本之前性能较差，在并发不严重的情况下，因为Synchronize依然对象上锁，每个对象需要维护一个Monitor管理对象，管理对象需要维护一个Mutex互斥量对象。Mutex是由操作系统内部的pthread线程库维护的。上锁需要通过JVM从用户态切换到内核态来调用底层操作系统的指令，这样操作的性能比较差。
+
+> **无锁状态 --> 偏向锁 --> 轻量级锁 --> 重量级锁**
+
+- 对象头中的MarkWord字段（32位）
+
+<table style="text-align:center;vertical-align: middle!important;">
   <tr>
-    <th>状态</th>
-    <th>23</th>
-    <th>2</th>
-    <th>4</th>
+    <th rowspan="2">锁状态</th>
+    <th colspan="2">25</th>
+    <th rowspan="2">4</th>
     <th>1</th>
     <th>2</th>
+  </tr>
+  <tr>
+    <th>23</th>
+    <th>2</th>
+    <th>是否偏向锁</th>
+    <th>锁标志位</th>
   </tr>
   <tr>
     <td>无锁</td>
@@ -469,11 +530,24 @@ Java语言提供了 **volatile** 和 **synchronized** 两个关键字来保证�
     <td>10</td>
   </tr>
   <tr>
-    <td>GC</td>
+    <td>GC标记</td>
     <td colspan="4"></td>
     <td>11</td>
   </tr>
 </table>
+
+- 对象头中的类型指针（Klass Pointer）
+
+类型指针用于指向元空间当前类的类元信息，比如调用类中的方法，通过类型指针找到元空间中的该类，在找到相应的方法。开启指针压缩后，类型指针只用4个字节存储，否则需要8个字节存储。
+
+##### 膨胀升级
+
+- 无锁状态：当对象锁被创建出来时，在线程获得该对象锁之前，对象处于无锁状态。
+- 偏向锁：在大多数情况下，锁不仅不存在多线程中竞争，而且总是由同一线程多次获得，因为为了减少同一线程获取锁（涉及到一些CAS操作，耗时）的代价而引入偏向锁。偏向锁的核心思想是，一旦有线程持有了这个对象，标志位修改为1，就进入偏向模式，同时会把这个线程的ID记录在对象的 `Mark Work`中。当这个线程再次请求锁时，无需再做任何同步操作，即获得锁的过程，这样就省去了大量有关锁申请的操作，从而也就提升程序的性能。对于锁竞争比较激烈的场合，偏向锁就失效了，因为这样的场合极有可能每次申请锁的线程都是不同的，因此这种场合下不应该使用偏向锁，否则会得不偿失，需要注意的是，偏向锁失败后，并不会立即膨胀为重量级锁，而是先升级为轻量级锁。
+- 轻量级锁：如果对象是无锁的，JVM会在当前线程中的栈帧中建立一个 `Lock Record（锁记录）` 的空间，用来存放对象的 `Mark Work` 拷贝，然后把 `Lock Record`中的 `owner` 属性指向当前对象。接下来JVM会利用CAS尝试把对象原本的  `Mark Work` 更新回 `Lock Record` 的指针，成功就说明加锁成功，于是改变锁标志位，执行相关同步操作。如果失败了，判断当前对象的 `Mark Work` 是否指向当前线程中的栈帧，如果是就表示当前线程已经持有该对象锁。如果不是，说明当前对象锁被其他线程持有，于是进行自旋。
+- 自旋锁：线程通过不断的自旋尝试上锁，为什么要自旋？因为如果线程被频繁挂起，也就意味着系统在用户态与内核态之间频繁的切换。——我们所有的程序都在用户空间运行，进入运行状态也就是（用户态），但是很多操作可能涉及内核运行，比如I/O，我们就会进入内核运行状态（内核态）。通过自旋，让线程再等待时不会挂起。自旋次数默认为10次，可以通过 `--XX:PreBlockSpin` 进行修改。如果自旋失败到达阈值，即将升级为重量级锁。
+
+注意：锁的膨胀升级，只能升不能降，也就是说升级过程不可逆。
 
 ### Volatile
 

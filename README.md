@@ -2848,7 +2848,7 @@ init进程是Android系统中用户空间的第一个进程，是所有用户进
 
 ### 生命周期三大循环
 
-1.Activity的entire lifetime（全部的生命期）发生在调用onCreate()和调用onDestory()之间。
+1.Activity的entire lifetime（全部的生命期）发生在调用onCreate()和调用onDestroy()之间。
 
 在onCreate()方法中执行全局状态的建立(例如定义布局)，在onDestroy()方法中释放所有保存的资源。
 
@@ -2868,7 +2868,7 @@ standard：标准模式也是系统的默认模式。每次启动一个 Activity
 
 当我们用 ApplicationContext 去启动 standard 模式的 Activity 时会报错，错误如下：
 
-```java
+```log
 android.util.AndroidRuntimeException: Calling startActivity() from outsideof an Activity  context requires the FLAG_ACTIVITY_NEW_TASK flag. Is this really what you want?
 ```
 
@@ -4575,6 +4575,19 @@ View --> ViewModel -->View，双向绑定，数据改动可以反映到界面，
 
 优秀的架构思想+官方支持=强大
 
+## Jetpack Architecture(架构组件)
+
+[带你领略Android Jetpack组件的魅力](https://juejin.cn/post/6844903768614518798)
+
+- Data Binding(数据绑定)： 数据绑定库是一种支持库，借助该库，可以使用声明式将布局中的界面组件绑定到应用中的数据源。
+- Lifecycles： 方便管理 Activity 和 Fragment 生命周期，帮助开发者书写更轻量、易于维护的代码。
+- LiveData：是一个可观察的数据持有者类。与常规observable不同，LiveData是有生命周期感知的。
+- Navigation：处理应用内导航所需的一切。
+- Paging：帮助开发者一次加载和显示小块数据。按需加载部分数据可减少网络带宽和系统资源的使用。
+- Room：Room持久性库在SQLite上提供了一个抽象层，帮助开发者更友好、流畅的访问SQLite数据库。
+- ViewModel：以生命周期感知的方式存储和管理与UI相关的数据。
+- WorkManager：即使应用程序退出或设备重新启动，也可以轻松地调度预期将要运行的可延迟异步任务。
+
 ## ViewModel
 
 ### ViewModel是什么，说说你所理解的ViewModel？
@@ -4826,6 +4839,389 @@ LiveData作为一种观察者模式设计思想，常常被和Rxjava一起比较
 
 当然，如果想任何时候都能监听到，都能获取回调，调用observeForever方法即可。
 
+## MMKV
+[一篇文章搞定《MMKV原理解析》](https://blog.csdn.net/weixin_45112340/article/details/131798459)
+
+### 什么是持久化存储呢
+简单来说，持久化存储就是将数据永久保存在磁盘或其他非易失性存储介质上，以便在程序重新启动或设备重启后可以重新加载和使用。
+
+在移动应用开发中，持久化存储非常重要，因为移动设备的特点是资源有限，且具有临时性。通过持久化存储，应用可以将数据持久保存，即使应用关闭或设备重启，数据也不会丢失。常见的使用场景包括存储用户配置信息、用户登录信息、应用状态、用户生成的内容等。
+
+### 常见持久化存储
+- **文件存储**：使用IO传输的方式将数据写入文件中。可以借助FileInputStream和FileOutputStream类来进行读写操作。这种方式适用于存储较小的数据量，例如配置文件和日志等。
+- **Shared Preferences**：使用键值对的方式将数据存储到SharedPreferences文件中。SharedPreferences文件是一个XML文件，可以在应用程序间共享。这种方式通常用于存储应用程序的配置参数和用户偏好设置。
+- **SQLite数据库**：使用SQLite数据库引擎来存储和管理结构化数据。SQLite是一个嵌入式关系型数据库，可以提供高效的数据存储和查询功能。开发者可以借助Android提供的SQLiteOpenHelper类来创建和管理数据库。
+- **DataStore**：DataStore是Android Jetpack组件库中的一种持久化数据存储解决方案，从Android Jetpack 1.0.0-alpha06版本开始引入。它提供了一种类型安全、支持协程的方式来存储和读取数据，并且可以与LiveData和Flow配合使用。DataStore支持两种存储格式：Proto DataStore和Preferences DataStore。
+- **MMKV**：MMKV是基于底层的mmap文件映射技术实现的，具有快速的读写速度和较低的内存占用。MMKV适用于在Android应用中存储较大量的键值对数据。
+
+### MMKV优点
+
+- **高性能**：MMKV使用了一些技术手段，如mmap文件映射和跨进程通信的共享内存，以实现更高效的数据存取操作。MMKV的性能比SharedPreferences快数十倍，尤其在读写大量数据时效果更加明显。
+- **小存储体积**：这是因为MMKV使用了一种更高效的序列化算法，并且将数据存储在二进制文件中，避免了XML解析和序列化的开销。相同数据量情况下，MMKV的存储体积可以减少50%以上。
+- **跨进程共享**：MMKV支持多进程间的数据共享，这对于需要在多个进程之间传递数据的应用程序非常有用。MMKV通过共享内存和文件锁定机制来确保跨进程读写数据的一致性和安全性。
+- **API简单易用**：MMKV提供了简洁、易用的API，使数据存取变得更加方便。您可以使用各种数据类型作为键值，而无需进行烦琐的类型转换。同时，MMKV还提供了诸如数据压缩和加密等额外功能，方便开发者进行更多的数据处理。
+
+### MMKV劣势
+凡事不是绝对好的！！
+
+1. 他是同步去存储的，写入大的字符串不如SP、Datastore。 为什么说不如呢？
+他的存储速度确实快，但是大家注意了，他是同步啊！！！ 我们关注APP的卡顿时间指的是什么呢？
+是主线程的卡顿时间，所以就是他时间再短，也是阻塞了主线程的时间的。但是SP和Datastore是子线程写入的。
+别被他的时间骗了哦！！！
+
+2. 还有一个缺点：他是磁盘写入啊兄弟们。 有没有知道会出现什么问题的？
+哎呦喂，答对了。断电啊、意外关机啊。那么没写完数据怎么办啊？
+能咋办，丢失了呗。没办法。（可以在上层做备份缓存）
+但是SP和Datastore是有备份的。
+
+### SharedPreferences解析（为什么不用SP）
+
+![20231011-205518.png](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231011-205518.png)
+
+#### SharedPreferences的过程
+##### 启动App初始化：利用IO读取XML文件（SP数据存放在XML中）
+xml：（存储文件通常位于/data/data/包名/shared_prefs/目录下。）
+
+```xml
+<xml version='1.0' encoding='utf-8' standalone='yes'>
+<map>
+    <string name="name">user_name</string>
+    <int name="age" value="28"/>
+    <boolean name="xiaomeng" value="false"/> 
+<map>
+```
+
+##### 通过反序列化全量的添加到内存map中
+
+核心代码：SharedPreferencesImpl.java
+
+```java
+Map map = null;
+StructStat stat = null;
+try {
+    stat = Os.stat(mFile.getPath());
+    if (mFile.canRead()) {
+        BufferedInputStream str = null;
+        try {
+            str = new BufferedInputStream(
+                    new FileInputStream(mFile), 16*1024);
+            //将xml文件转成map
+            map = XmlUtils.readMapXml(str);
+        } catch (Exception e) {
+            Log.w(TAG, "Cannot read " + mFile.getAbsolutePath(), e);
+        } finally {
+            IoUtils.closeQuietly(str);
+        }
+    }
+} catch (ErrnoException e) {
+    /* ignore */
+}
+```
+
+##### 上面全量加入到map中后，通过Map.get(key)0获取Value
+
+源码如下：SharedPreferencesImpl.java
+
+```java
+public String getString(String key, @Nullable String defValue) {
+    synchronized (mLock) {
+        //阻塞等待sp将xml读取到内存后再get
+        awaitLoadedLocked();
+        String v = (String)mMap.get(key);
+        //如果value为空返回默认值
+        return v != null ? v : defValue;
+    }
+}
+
+```
+
+#### SharedPreferences存在的问题
+
+##### sp.get的阻塞问题（会出现ANR）
+
+这是个什么问题呢？我们通过上面的过程知道，sp是通过IO获取文件数据是一个耗时的操作，所以需要在子线程操作。
+那么当我们数据量变大时，还没有完成XML解析全量加入Map时。因为子线程初始化，这时候我们去获取，自然是获取不到的，拿SP是怎么防止你拿不到呢？
+源码如下：
+
+```java
+@Nullable
+public String getString(String key, @Nullable String defValue) {
+    synchronized (mLock) {
+        //阻塞等待sp将xml读取到内存后再get
+        awaitLoadedLocked();
+        String v = (String)mMap.get(key);
+        //如果value为空返回默认值
+        return v != null ? v : defValue;
+    }
+}
+
+private void awaitLoadedLocked() {
+    ...
+    // sp读取完成后会把mLoaded设置为true
+    while (!mLoaded) {
+        try {
+            mLock.wait();
+        } catch (InterruptedException unused) {
+        }
+    }
+}
+
+```
+awaitLoadedLocked()这个操作会阻塞，当xml文件读取完成后才会释放锁mLock.notifyAll();
+这时候阻塞着，如果我们在主线程中调用了呢？ 岂不是就一起在等待，也就是阻塞了。那不就ANR了吗。
+
+##### 全量的更新问题
+
+这个是个什么问题呢？可以看到每次更新时，会把map中的数据，从内存中全量的更新到文件中。
+兄弟们全量更新属于什么啊？那不是相当于每次都重新保存吗。
+还是个IO文件的操作，当文件越来越大，全量保存的代价也就越来越大了。
+
+##### commit和apply提交内容都会ANR
+
+- commit()方法，会进行同步写，一定存在耗时，不能直接在主线程调用。
+
+他会一样把writeToFile任务加入主线程队列中，如果太大，导致全量的更新过慢就会ANR
+
+源码如下：
+
+```java
+public boolean commit() {
+            // 开始排队写
+            SharedPreferencesImpl.this.enqueueDiskWrite(
+                mcr, null /* sync write on this thread okay */);
+            try {
+                // 等待同步写的结果
+                mcr.writtenToDiskLatch.await();
+            } catch (InterruptedException e) {
+                return false;
+            } finally {
+            }
+            notifyListeners(mcr);
+            return mcr.writeToDiskResult;
+        }
+
+```
+
+- 大家都知道apply方法是异步写，但是也可能造成ANR的问题。下面我们来看apply方法的源码。
+
+```java
+public void apply() {
+            // 先将更新写入内存缓存
+            final MemoryCommitResult mcr = commitToMemory();
+            // 创建一个awaitCommit的runnable，加入到QueuedWork中
+            final Runnable awaitCommit = new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            // 等待写入完成
+                            mcr.writtenToDiskLatch.await();
+                        } catch (InterruptedException ignored) {
+                        }
+                    }
+                };
+            // 将awaitCommit加入到QueuedWork中
+            QueuedWork.addFinisher(awaitCommit);
+            Runnable postWriteRunnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        awaitCommit.run();
+                        QueuedWork.removeFinisher(awaitCommit);
+                    }
+                };
+            // 真正执行sp持久化操作，异步执行
+            SharedPreferencesImpl.this.enqueueDiskWrite(mcr, postWriteRunnable);
+            // 虽然还没写入文件，但是内存缓存已经更新了，而listener通常都持有相同的sharedPreference对象，所以可以使用内存缓存中的数据
+            notifyListeners(mcr);
+        }
+
+```
+可以看到这里确实是在子线程进行的写入操作，但是为什么说apply也会引起ANR呢？
+因为在Activity和Service的一些生命周期方法里，都会调用QueuedWork.waitToFinish()方法，这个方法会等待所有子线程写入完成，才会继续进行。主线程等子线程，很容易产生ANR问题。
+
+```java
+public static void waitToFinish() {
+       Runnable toFinish;
+       //等待所有的任务执行完成
+       while ((toFinish = sPendingWorkFinishers.poll()) != null) {
+           toFinish.run();
+       }
+   }
+
+```
+所以可以看到因为apply引起的ANR日志中会有：ActivityThread的信息出现。
+
+```log
+at java.util.concurrent.CountDownLatch.await(CountDownLatch.java:202)
+at android.app.SharedPreferencesImpl$EditorImpl$1.run(SharedPreferencesImpl.java:364)
+at android.app.QueuedWork.waitToFinish(QueuedWork.java:88)
+at android.app.ActivityThread.handleStopActivity(ActivityThread.java:3246)
+at android.app.ActivityThread.access$1100(ActivityThread.java:141)
+at android.app.ActivityThread$H.handleMessage(ActivityThread.java:1239)
+
+```
+
+总结：apply方法虽然是在异步线程写入，但是由于Activity和Service的生命周期会等待所有SharedPreference的写入完成，所以可能引起卡顿和ANR问题。
+
+但是为什么会去等待呢？
+
+当然要等待了：举个例子
+
+如果在Activity的onPause方法中调用apply方法保存数据，在异步线程中的写入操作还没有完成时，Activity被销毁了，那么这部分数据就会丢失。
+为了避免这种情况，Android系统在Activity和Service的生命周期方法中会等待所有子线程写入操作完成，然后再继续执行下面的代码。这样可以确保数据的一致性和完整性，避免数据丢失或不一致的问题。
+
+##### 不支持多进程
+
+### MMKV原理解析
+
+首先MMKV是继承SharedPreferences上层也是同样的在map中进行操作的。
+那MMKV是怎么解决了上面SharedPreferences的问题的呢？
+- 读写方式：I/O
+- 数据格式：xml
+- 写入方式：全量更新
+
+那就围绕着SharedPreferences这三个问题来了解MMKV的原理吧。
+
+#### mmap
+
+MMKV的核心基于 `mmap`，之所以他比sp要快很多，也是`mmap`的特性使然
+
+##### mmap基础概念
+
+> `mmap`是一种内存映射文件的方法，即将一个文件或者其它对象映射到进程的地址空间，实现文件磁盘地址和进程虚拟地址空间中一段虚拟地址的一一对映关系。实现这样的映射关系后，进程就可以采用指针的方式读写操作这一段内存，而系统会自动回写脏页面到对应的文件磁盘上，即完成了对文件的操作而不必再调用`read`，`write`等系统调用函数。相反，内核空间对这段区域的修改也直接反映用户空间，从而可以实现不同进程间的文件共享。
+
+![20231011-211616.png](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231011-211616.png)
+
+##### mmap零拷贝
+
+MMKV的核心在于mmap，所以他的优点就是借用了mmap的优点。（FileChannel是典型的利用零拷贝）
+
+首先了解一些基础知识：
+
+我们经常说的内存是什么？
+
+在工作中我们口中的内存都是虚拟内存：虚拟内存又分为两块，用户空间和内核空间。
+
+- 用户空间是用户程序代码运行的地方（我们APP运行的内存）
+- 内核空间是内核代码运行的地方，由所有进程共享、进程间有相互隔离的一个共享空间。
+
+1. 首先看一下传统的IO是怎么操作内存的呢？
+
+用户空间->内核空间（CPU copy）->虚拟内存（DMA copy：负责将数据于内核传输的）->物理内存（内存映射，虚拟内存和物理内存进行映射）
+
+![20231011-213020.png](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231011-213020.png)
+
+2. 那mmap是怎么操作内存的呢？
+
+- 首先零拷贝只是没有CPU拷贝的、DMA copy还是有的。
+- 用户空间（直接映射到）->虚拟内存（DMA copy）->物理内存
+
+![20231011-213232.png](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231011-213232.png)
+
+因为没有CPU的拷贝，所以效率是要提升很多的。
+
+- 实现这样的映射关系后，进程就可以采用指针的方式读写操作这一段内存，而系统会自动回写脏页面到对应的文件磁盘上，即完成了对文件的操作而不必再调用read，write等系统调用函数。
+- 相当于操作内存就等于操作文件。
+- 相反，内核空间对这段区域的修改也直接反映用户空间，从而可以实现不同进程间的文件共享。
+
+3. 具体是怎样映射过去的呢？先看看map的函数吧，太深了就不说了（源码在C层）
+
+```c++
+void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t offset);
+```
+
+- start：映射区的开始地址。设置null即可。
+- length：映射区的长度。传入文件对齐后的大小m_size。
+- prot：期望的内存保护标志，不能与文件的打开模式冲突。设置可读可写。
+- flags：指定映射对象的类型，映射选项和映射页是否可以共享。设置MAP_SHARED表示可进程共享，MMKV之所以可以实现跨进程使用，这里是关键。
+- fd：有效的文件描述词。用上面所打开的m_fd。
+- off_toffset：被映射对象内容的起点。从头开始，比较好理解
+
+##### MMKV数据存储.defalut文件
+
+上面也讲到了SharedPreferences是以xml文件存放的。 而MMKV是以.defalut保存到指定的目录中的。
+
+下面看一下.defalut中什么样子的：
+
+.defalut（这是一个二进制文件，每个字节代表一个8位的二进制数，可以表示256个不同的值（从0到255））
+我们用16进制来打开：
+
+![20231011-215029.png](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231011-215029.png)
+
+这。。。。。这是什么呢？
+我带大家来解读一下：先看下面的图对照着图来说。
+
+![](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231011-215053.png)
+
+首先0E（十六进制）：总长度为14（十进制）
+
+其次07（十六进制）：Key长度是7（十进制）
+
+往后数7个：61 62 63 64 65 66 67(十六进制) ：Key为abcdefg
+
+其次01（十六进制）：Value的长度是1（十六进制）
+
+往后数1个：01：Value为1
+
+那么就是<abcdefg，1>
+
+以此类推第二个键值对为<x，1>
+
+**问题一：那么长度超过255也就是超过一个字节了呢？**
+
+答：他是一个变长编码来存储的，可以变长到1-5个字节。这个也叫protocol buffers数据存储格式（也是一种序列化与反序列化的数据格式和Json和XML一样，但是更小）
+
+**问题二：这么不易读，为什么还要用呢？**
+
+第一点肯定是因为占用空间小，数据更紧凑，都是有效数据。
+第二点是他可以增量更新，下面看看他的增量更新
+
+##### 增量更新
+
+增量更新贼简单。
+
+直接增量的写进去就行。为什么呢？
+
+举个例子：
+
+我们要更改那个<x，1>：01，01，78，01为<x，2>：01，01，78，02
+
+我们只需要在后面直接加上就可以。
+
+![20231011-215647.png](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231011-215647.png)
+
+那为什么直接加上就可进行修改呢？
+
+大家想想我们读取出来数据是加入到哪里的？
+
+是HashMap啊大哥们，HashMap有什么特性啊。重复的Key就覆盖了啊。那不久相对于更新了吗！！！！
+
+不得不说作者真聪明。
+
+那么有同学问了
+
+**问题一：那文件不断追加，文件过大了怎么办啊？**
+
+嘿嘿：MMKV除了增量更新还有全量更新呢。
+
+他是利用全量更新来解决这个问题的。看看怎么解决的
+
+1. 太多重复的Key导致
+- 去重：利用Map去重后进行全量的更新进去
+2. 确实需要保存更多的数据
+- 扩容：先扩容->再全量的加入新扩容的内容中
+
+##### MMKV跨进程
+
+MMKV是一种跨进程键值存储库，其原理是利用Shared Memory映射来实现跨进程数据共享。
+
+下面按照步骤详细说明MMKV的原理：
+1. 创建共享内存映射：在进程A中，调用MMKV的初始化方法时，会创建一个共享内存映射区域，该区域会被映射到进程A的地址空间中。
+2. 将数据写入共享内存：在进程A中，当调用MMKV的put方法时，需要将要存储的数据序列化，并写入到共享内存中。MMKV使用B+Tree数据结构来组织数据，因为B+Tree适合高效地进行数据的查询和修改。
+3. 通知其他进程有数据更新：在进程A中，当数据写入共享内存后，会发送一个通知给其他进程，告知它们有新数据更新。进程间通信的方式可以是共享内存区域上的一个信号量或者一个读写锁。
+4. 共享内存读取数据：当进程B收到进程A发出的数据更新通知后，会通过共享内存映射将该共享内存区域映射到进程B的地址空间中。
+5. 从共享内存中读取数据：在进程B中，可以直接从共享内存中读取数据。MMKV通过B+Tree的索引结构，可以快速地定位数据，并进行反序列化操作，将数据转换为可用的格式。
+6. 更新数据时的锁机制：在多进程环境下，多个进程可能会同时尝试修改同一个MMKV实例中的数据。为了保证数据一致性，MMKV使用了一种基于CAS（Compare and Swap）机制的自旋锁来实现数据的并发访问控制。这样可以确保每次修改数据时，只有一个进程可以成功地将数据写入共享内存。
+
 ## 注解是什么？有哪些元注解
 
 注解，在我看来它是一种信息描述，不影响代码执行，但是可以用来配置一些代码或者功能。
@@ -4981,6 +5377,30 @@ suspend fun getUserInfo(): String {
 #### 说说你对协程的理解
 
 在我看来，协程和线程一样都是用来解决并发任务（异步任务）的方案。所以协程和线程是属于一个层级的概念，但是对于kotlin中的协程，又与广义的协程有所不同。kotlin中的协程其实是对线程的一种封装，或者说是一种线程框架，为了让异步任务更好更方便使用。
+
+#### Java线程池与Kotlin协程线程池区别
+
+[Kotlin协程-与线程池的对比 & 铺平回调 & 协程分发器](https://juejin.cn/post/7205116210077597733)
+
+Java线程池：核心线程+队列+其他线程
+
+首先使用核心线程执行任务，一旦核心线程满了，就把任务加到队列中，内部根据不同的调度实现来判断是否开启其他线程来执行队列的任务。
+
+协程线程池：全局队列+本地队列
+
+先尝试添加到本地队列(尾部调用机制)，再添加到全局队列，协程线程池从队列中找任务（任务偷取机制）执行，PS：内部又一系列的CUP任务与非CUP任务的转换逻辑
+
+**Java线程池与Kotlin协程线程池的区别：**
+
+Java线程池比较开放，可以选择系统不同的线程策略，也可以自定义线程池，不同的组合可以实现不同的效果，没有区分任务是否阻塞的属性。
+
+协程的线程池是专供协程使用，没有那么开放，内部的任务区分是否阻塞的属性，会放到不同的队列中，CoroutineScheduler类中的两个全局队列 globalCpuQueue（存非阻塞的任务） ， globalBlockingQueue（存阻塞的任务）。感觉调度会更加的合理。
+
+suspendCoroutine 与 Dispatchers.IO 的结论：
+
+在协程中善用去除回调的方式，尽量把异步的逻辑同步化，不破坏协程的作用域，同时善用线程调度器，区分CUP任务与非CUP任务。最大化的优化线程池效率。
+
+Dispatchers.IO 一般放入 globalBlockingQueue 执行阻塞型任务（不怎么占用CPU的任务，比如文件、数据库、网络等操作等），Dispatchers.Default 一般放入 globalCpuQueue 非阻塞任务（占用CPU的任务，比如人脸特征提取，图片压缩处理，视频的合成等）
 
 #### 说下协程具体的使用
 

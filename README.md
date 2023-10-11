@@ -77,7 +77,7 @@ java中的序列化方式Serializable效率比较低，主要有以下原因：
 
 首先，Serializable本身就是存储到二进制文件，所以用于持久化比较方便。而Parcelable序列化是在内存中操作，如果进程关闭或者重启的时候，内存中的数据就会消失，那么Parcelable序列化用来持久化就有可能会失败，也就是数据不会连续完整。
 
-而且Parcelable还有一个问题是兼容性，每个Android版本可能内部实现都不一样，只是用于内存中也就是传递数据的话是不影响的，但是如果持久化可能就会有问题了，低版本的数据拿到高版本可能会出现兼容性问题。
+而且Parcelable还有一个问题是兼容性，每个Android版本可能内部实现都不一样，知识用于内存中也就是传递数据的话是不影响的，但是如果持久化可能就会有问题了，低版本的数据拿到高版本可能会出现兼容性问题。
 
 但是实际情况，对于Android中的对象本地化存储，一般是以数据库、SP的方式进行保存。
 
@@ -236,13 +236,13 @@ public native String intern();
 
 下面通过一个简单的示意图看一下String在内存中的两种存储模式。
 
-![](https://gitee.com/shandong_zhaotai_network_sd_zhaotai/ImageRepo/raw/master/2021/images/192741326440d4fcf1f950b1efe76f84.jpeg)
+![192741326440d4fcf1f950b1efe76f84.jpeg](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2021/images/192741326440d4fcf1f950b1efe76f84.jpeg)
 
 上面的示意图我们可以看到在堆内创建的String对象的char value[]属性指向了常量池中的char value[]。
 
 还是上面的示例，如果我们通过debug模式也能够看到String的char value[]的引用地址。
 
-![](https://gitee.com/shandong_zhaotai_network_sd_zhaotai/ImageRepo/raw/master/2021/images/e16a5886e5933ae37fefcab69f950263.jpeg)
+![e16a5886e5933ae37fefcab69f950263.jpeg](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2021/images/e16a5886e5933ae37fefcab69f950263.jpeg)
 
 图中两个String对象的value值的引用均为{char[3]@1355}，也就是说，虽然是两个对象，但它们的value值均指向常量池中的同一个地址。当然，大家还可以拿一个复杂对象（Person）的字符串属性（name）相同时的debug结果进行比对，结果是一样的。
 
@@ -274,7 +274,7 @@ String str = "abc" + "def";
 
 我们通过javap查看class文件可以看到如下内容。
 
-![da2e53e424750afd4ec63dd5acbc6770.jpeg](https://gitee.com/shandong_zhaotai_network_sd_zhaotai/ImageRepo/raw/master/2021/images/da2e53e424750afd4ec63dd5acbc6770.jpeg)
+![da2e53e424750afd4ec63dd5acbc6770.jpeg](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2021/images/da2e53e424750afd4ec63dd5acbc6770.jpeg)
 
 针对上面的问题，我们再次升级一下，下面的代码会创建几个对象？
 
@@ -310,7 +310,7 @@ public void testString3() {
 }
 ```
 
-![adc020264de49d273648164d40fed2d0.jpeg](https://gitee.com/shandong_zhaotai_network_sd_zhaotai/ImageRepo/raw/master/2021/images/adc020264de49d273648164d40fed2d0.jpeg)
+![adc020264de49d273648164d40fed2d0.jpeg](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2021/images/adc020264de49d273648164d40fed2d0.jpeg)
 
 很明显，s3和s4的值相同，但value值的地址并不相同。即便是将s3和s4的位置调整一下，效果也一样。s4很明确是存在于常量池中，那么s3对应的值存储在哪里呢？很显然是在堆对象中。
 
@@ -725,7 +725,7 @@ public class HashMap<K, V> extends AbstractMap<K, V>
     static final int UNTREEIFY_THRESHOLD = 6;
     // 容器可以树化的最小容量，
     static final int MIN_TREEIFY_CAPACITY = 64;
-   // 序列化 id
+    // 序列化 id
     private static final long serialVersionUID = 362498820763181265L;
     // 加载因子，可以作为决定扩容的一个因子
     final float loadFactor;
@@ -2774,11 +2774,11 @@ System.exit(0)
 
 ### 启动流程
 
-![启动流程](https://gitee.com/shandong_zhaotai_network_sd_zhaotai/ImageRepo/raw/master/2021/images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210316102709.png)
+![启动流程](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2021/images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210316102709.png)
 
 ### app启动交互逻辑
 
-![app启动交互逻辑](https://gitee.com/shandong_zhaotai_network_sd_zhaotai/ImageRepo/raw/master/2021/images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210316102715.jpg)
+![app启动交互逻辑](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2021/images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210316102715.jpg)
 
 ### Android系统中启动的第一个进程是哪个？
 
@@ -2826,7 +2826,7 @@ init进程是Android系统中用户空间的第一个进程，是所有用户进
 
 ## Activity 生命周期和启动模式
 
-![](https://gitee.com/shandong_zhaotai_network_sd_zhaotai/ImageRepo/raw/master/2021/images/20191226185212765.png)
+![20191226185212765.png](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2021/images/20191226185212765.png)
 
 ### 生命周期七种方法
 
@@ -2905,7 +2905,10 @@ singleInstance：单实例模式。该模式除了具备 singleTask 模式的所
 2. 通过 Intent 中设置标志位来为 Activity 指定启动模式，如下所示：
 
 ```java
-Intent intent = new Intent();intent.setClass(MainActivity.this, SecondActivity.class);intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(intent);
+    Intent intent = new Intent();
+    intent.setClass(MainActivity.this, SecondActivity.class);
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    startActivity(intent);
 ```
 
 优先级上第二种优先级高于第一种，当两种同时存在时，以第二种方式为准；这两种方式的限定方式不同，第一种无法直接为 Activity 设定 FLAG_ACTIVITY_CLEAR_TOP 标识，第二种无法为 Activity 指定 singleInstance 模式。
@@ -4359,7 +4362,7 @@ public <R> LoadStatus load() {
 
 概括来说，图片加载包含封装，解析，下载，解码，变换，缓存，显示等操作。
 
-![](https://gitee.com/shandong_zhaotai_network_sd_zhaotai/ImageRepo/raw/master/2021/images/2019112206351331.png)
+![2019112206351331.png](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2021/images/2019112206351331.png)
 
 - 封装参数：从指定来源，到输出结果，中间可能经历很多流程，所以第一件事就是封装参数，这些参数会贯穿整个过程；
 - 解析路径：图片的来源有多种，格式也不尽相同，需要规范化；
@@ -5226,7 +5229,7 @@ A发送消息给B，B回一条消息表示我收到了，这个过程就保证�
 
 也就是四条消息能保证双方的消息发送都是正常的，其中B回消息和B发消息，可以融合为一次消息，所以就有了三次握手。
 
-![](https://gitee.com/shandong_zhaotai_network_sd_zhaotai/ImageRepo/raw/master/2021/images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210316114243.png)
+![微信图片_20210316114243.png](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2021/images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210316114243.png)
 
 ### 数据传输阶段
 
@@ -5243,7 +5246,7 @@ A发送消息给B，B回一条消息表示我收到了，这个过程就保证�
 - B回给A的数据包（Ack=100+1000=1100，Seq=上一个数据包的Ack=200，长度=500字节）
 - A发送给B数据包（Seq=1100，Ack=200+500=700）
 
-![](https://gitee.com/shandong_zhaotai_network_sd_zhaotai/ImageRepo/raw/master/2021/images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210316114342.png)
+![微信图片_20210316114342.png](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2021/images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210316114342.png)
 
 ### 断开阶段（四次挥手）
 
@@ -5266,7 +5269,7 @@ A发送断开消息给B，B回一条消息表示我收到了，这个过程就�
 
 其实和连接阶段的区别就在于，这里的B的确认消息和断开消息不能融合。因为A要断开的时候，B可能还有数据要处理要发送，所以要等正常业务处理完，在发送断开消息。
 
-![](https://gitee.com/shandong_zhaotai_network_sd_zhaotai/ImageRepo/raw/master/2021/images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210316114502.png)
+![微信图片_20210316114502.png](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2021/images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210316114502.png)
 
 ### 常用的状态码
 
@@ -5367,7 +5370,7 @@ Server Hello Done消息就是个结束标志，表示已经把该发的消息都
 
 拿到对称密钥后，双方就可以使用对称密钥加密解密数据，进行正常通信了。
 
-![](https://gitee.com/shandong_zhaotai_network_sd_zhaotai/ImageRepo/raw/master/2021/images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210316114936.png)
+![微信图片_20210316114936.png](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2021/images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210316114936.png)
 
 扩展：为什么要使用非对称加密算法协商出对称加密这种方法？
 
@@ -5415,4 +5418,4 @@ B拿到后，签名用公钥解密出来，然后和传过来数据的哈希值�
 
 其实在服务器证书和根证书中间还有一层结构：叫中级证书，我们可以任意点开一个网页，点击左上角的🔒按钮就可以看到证书详情：
 
-![](https://gitee.com/shandong_zhaotai_network_sd_zhaotai/ImageRepo/raw/master/2021/images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210316115054.jpg)
+![微信图片_20210316115054.jpg](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2021/images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210316115054.jpg)

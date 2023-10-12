@@ -5641,6 +5641,17 @@ Jetpack 中定义的协程作用域（viewModelScope 和 lifecycleScope）可以
 - noinline: 强制非内联，直接调用内部的代码，而非直接拷贝内部代码到调用处。
 - crossinline: 强制内联的意思，crossinline可以禁止在内联的lambda表达式中使用return操作或者结束指定的内联函数继续执行
 
+### kotlin中的reified关键字
+
+[kotlin中的reified关键字](https://juejin.cn/post/6844904002816049159)
+
+使用方法
+
+- 在泛型类型前面增加reified修饰
+- 在方法前面增加inline
+
+泛型在运行时会被类型擦除，但是在inline函数中我们可以指定类型不被擦除， 因为inline函数在编译期会将字节码copy到调用它的方法里，所以编译器会知道当前的方法中泛型对应的具体类型是什么，然后把泛型替换为具体类型，从而达到不被擦除的目的，在inline函数中我们可以**通过reified关键字来标记这个泛型在编译时替换成具体类型**
+
 ## Android 和WebView 通信
 
 ### js调用android

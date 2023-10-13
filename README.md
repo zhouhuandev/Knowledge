@@ -5411,19 +5411,78 @@ public class ExtendClass extends BaseClass  {
 
 [解决Java线程池 面试所有问题](https://blog.csdn.net/qq_27828675/article/details/115357347)
 
-- 核心线程（corePool）：线程池最终执行任务的角色肯定还是线程，同时我们也会限制线程的数量，所以我们可以这样理解核心线程，**有新任务提交时，首先检查核心线程数，如果核心线程都在工作，而且数量也已经达到最大核心线程数，则不会继续新建核心线程，而会将任务放入等待队列。**
+- **核心线程（corePool）**：线程池最终执行任务的角色肯定还是线程，同时我们也会限制线程的数量，所以我们可以这样理解核心线程，**有新任务提交时，首先检查核心线程数，如果核心线程都在工作，而且数量也已经达到最大核心线程数，则不会继续新建核心线程，而会将任务放入等待队列。**
 
-- 等待队列 (workQueue)：等待队列用于存储**当核心线程都在忙时，继续新增的任务，核心线程在执行完当前任务后，也会去等待队列拉取任务继续执行**，这个队列一般是一个线程安全的阻塞队列，它的容量也可以由开发者根据业务来定制。
+- **等待队列 (workQueue)**：等待队列用于存储**当核心线程都在忙时，继续新增的任务，核心线程在执行完当前任务后，也会去等待队列拉取任务继续执行**，这个队列一般是一个线程安全的阻塞队列，它的容量也可以由开发者根据业务来定制。
 
-- 非核心线程：**当等待队列满了，如果当前线程数没有超过最大线程数，则会新建线程执行任务**
+- **非核心线程**：**当等待队列满了，如果当前线程数没有超过最大线程数，则会新建线程执行任务**
 
-那么核心线程和非核心线程到底有什么区别呢？
+- **线程活动保持时间 (keepAliveTime)**：线程空闲下来之后，保持存活的持续时间，超过这个时间还没有任务执行，该工作线程结束。
+
+- **饱和策略 (RejectedExecutionHandler)**：当等待队列已满，线程数也达到最大线程数时，线程池会根据饱和策略来执行后续操作，默认的策略是抛弃要加入的任务。
+
+##### 核心线程和非核心线程到底有什么区别呢？
 
 说出来你可能不信，本质上它们没有什么区别，创建出来的线程也根本没有标识去区分它们是核心还是非核心的，线程池只会去判断已有的线程数（包括核心和非核心）去跟核心线程数和最大线程数比较，来决定下一步的策略。
 
-- 线程活动保持时间 (keepAliveTime)：线程空闲下来之后，保持存货的持续时间，超过这个时间还没有任务执行，该工作线程结束。
+##### Java线程池中，当核心线程数都在执行了且任务队列已满，线程数也达到了最大线程数时，继续提交任务会发生什么问题？
 
-- 饱和策略 (RejectedExecutionHandler)：当等待队列已满，线程数也达到最大线程数时，线程池会根据饱和策略来执行后续操作，默认的策略是抛弃要加入的任务。
+如果继续往线程池中提交任务，线程池的行为取决于线程池的饱和策略（RejectedExecutionHandler）。饱和策略定义了当无法将任务提交到线程池时采取的行动。
+
+- **AbortPolicy（默认策略）**：如果线程池队列满了且线程池中的线程数达到最大线程数，新提交的任务将被拒绝，并抛出RejectedExecutionException异常。
+```java
+ThreadPoolExecutor executor = new ThreadPoolExecutor(
+    corePoolSize,
+    maximumPoolSize,
+    keepAliveTime,
+    unit,
+    workQueue,
+    Executors.defaultThreadFactory(),
+    new ThreadPoolExecutor.AbortPolicy()
+);
+```
+
+- **CallerRunsPolicy**：如果线程池队列满了且线程池中的线程数达到最大线程数，新提交的任务会被当前线程执行，即由提交任务的线程执行该任务。
+
+```java
+ThreadPoolExecutor executor = new ThreadPoolExecutor(
+    corePoolSize,
+    maximumPoolSize,
+    keepAliveTime,
+    unit,
+    workQueue,
+    Executors.defaultThreadFactory(),
+    new ThreadPoolExecutor.CallerRunsPolicy()
+);
+```
+
+- **DiscardPolicy**：如果线程池队列满了且线程池中的线程数达到最大线程数，新提交的任务将被丢弃，不会有任何提示或错误。
+
+```java
+ThreadPoolExecutor executor = new ThreadPoolExecutor(
+    corePoolSize,
+    maximumPoolSize,
+    keepAliveTime,
+    unit,
+    workQueue,
+    Executors.defaultThreadFactory(),
+    new ThreadPoolExecutor.DiscardPolicy()
+);
+```
+
+- **DiscardOldestPolicy**：如果线程池队列满了且线程池中的线程数达到最大线程数，会丢弃队列中最旧的未处理任务，然后尝试重新提交新任务。
+
+```java
+ThreadPoolExecutor executor = new ThreadPoolExecutor(
+    corePoolSize,
+    maximumPoolSize,
+    keepAliveTime,
+    unit,
+    workQueue,
+    Executors.defaultThreadFactory(),
+    new ThreadPoolExecutor.DiscardOldestPolicy()
+);
+```
 
 ##### 基础运行流程图
 

@@ -134,9 +134,9 @@ JVM内存模型是一种符合计算机内存模型规范，屏蔽了各种硬�
 
 从以下两个图开始讲起,线程私有与线程共享的区域，虚拟机栈是基于线程的，一个Main方法都会运行一个线程，在它的细节里面就会涉及到栈帧的出栈入栈，类似于打手枪，栈里面的每一条数据就是每一个栈帧。本地方法栈就是去执行Native方法，程序计数器就是去存储当前线程所执行字节码的指令。
 
-![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/F40D9E0855D54F3C8C8C898C24362991/10848)
+![JVM虚拟机结构图](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-231923.png)
 
-![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/5EEB702D7DCE4E8B8A0357468D245576/10850)
+![JVM栈帧结构图](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-232121.png)
 
 ### 什么情况下内存栈溢出
 
@@ -146,7 +146,7 @@ JVM内存模型是一种符合计算机内存模型规范，屏蔽了各种硬�
 
 ### 描述new一个对象的流程
 
-![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/B01A255056B949E5BB58FC1F109DE0C6/10970)
+![Java对象创建流程图](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-232317.png)
 
 > 在实例化一个对象的时候，JVM首先会检查目标对象是否已经被加载且初始化，如何没有，JVM则需要做的是立刻去加载目标类，然后调用目标类的构造器完成初始化。目标类的加载是通过类加载器来实现的，主要是把一个类加载到内存里面，然后是初始化的过程，这个步骤主要是对目标类里面的**静态变量、成员变量、静态代码块**进行初始化，当目标类被初始化以后，就可以从常量池里面找到对应的类元信息了，并且目标对象的大小在类加载完成之后就已经确定了，所以这个时候就需要去为新创建的对象根据目标对象的大小在堆内存里面去分配内存空间，内存分配的方式一般有两种：第一种是**指针碰撞**，第二种是**空闲列表**，JVM会根据Java堆内存是否规整来决定内存的分配方法，接下来JVM会把对象里面的普通成员变量初始化为0值，比如说，Int类型初始化为0，String类型初始化为null，这一步操作主要是为了保证实例化对象中实例字段不用初始化就可以直接使用，也就是程序能够直接获取这些字段对应的数据类型的0值，然后JVM还需要对目标对象的对象头做一些设置，比如**对象所属的类元信息，对象的GC分代年龄，HashCode，锁标记**等，完成这些步骤以后对于JVM来讲，新对象的创建工作已经完成，但是对于Java语言来说，对象创建才算刚刚开始，接下来要做的就是要执行目标对象内部生成的 `<init>` 方法，初始化成员变量的值，执行构造块，最后调用目标对象的构造方法，去完成对象的创建，其中，`<init>` 方法是Java文件编译后在字节码文件里面自动生成的，它是一个实例构造器，这个构造器里面会把**构造块，变量初始化，调用父类构造器**等这样的一些操作组织在一起，所以调用 `<init>` 能够去完成这一系列的初始化动作，以上就是我对于这个问题的理解。
 
@@ -156,7 +156,7 @@ JVM内存模型是一种符合计算机内存模型规范，屏蔽了各种硬�
 
 特殊情况，如果符合逃逸分析他会走栈上分配
 
-![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/FD0058D326E447CDAFC4FC7DDC6830B8/10976)
+![对象的分配规则](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-232501.png)
 
 ### 如果一个对象是否被回收，有哪些算法，实际虚拟机使用的最多的是什么？
 
@@ -164,17 +164,17 @@ JVM内存模型是一种符合计算机内存模型规范，屏蔽了各种硬�
 
 大部分虚拟机都是使用的可达性算法
 
-![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/D0CDFC43206644E884B678828B479D79/10986)
+![可达性算法](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-232639.png)
 
 ### GC收集算法有哪些？他们的特点是什么？
 
-![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/5D45C7F7822043ABBECECE5F14E2B744/10999)
+![垃圾回收器](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-233801.png)
 
-![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/99A1E29ABA224743B57120389B63EC11/11004)
+![复制算法](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-233934.png)
 
-![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/57F7280BBE6F4F398CA7073A5C04F256/11008)
+![标记清除算法](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-234105.png)
 
-![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/5C0DD1CAC5BB4EC4A137200638840251/11010)
+![标记整理算法](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-234211.png)
 
 ### JVM中一次玩出个的GC流程是怎样的？对象如何晋级到老年代？
 
@@ -182,7 +182,7 @@ JVM内存模型是一种符合计算机内存模型规范，屏蔽了各种硬�
 
 GC的时候肯定伴随着对象的分配，所以对象优先在一等区进行分配，一等区空间不够了，然后对象会进入From区，或者to区，都不够了，才会进入老年代
 
-![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/FD0058D326E447CDAFC4FC7DDC6830B8/10976)
+![对象的分配原则](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-234333.png)
 
 ### Java中的集中引用关系，他们的区别是什么？
 
@@ -348,7 +348,7 @@ public String(char value[], int offset, int count)
 
 ### 类的生命周期
 
-![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/BCD0598ED3F04FF98D6CC84608D3E345/11636)
+![类的生命周期](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-234529.png)
 
 类从被加载到JVM中开始，到卸载为止，整个生命周期包括：加载、验证、准备、解析、初始化、使用和卸载七个阶段。
 
@@ -1313,7 +1313,7 @@ HashTable是sychronize(同步化),多个线程访问时不需要自己为它的�
 
 ### MessageQueue源码分析
 
-![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/BD5EE9445F2245DC9FF0AA19DD10509C/11059)
+![MessageQueue源码分析](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-234630.png)
 
 ### 流程
 
@@ -1420,7 +1420,7 @@ get方法就同理了，还是获取到当前线程，然后取出线程中的Th
 
 画个图方便理解记忆：
 
-![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/024AAC0CFA284323B2B17F52C1F85787/11495)
+![ThreadLocal对象](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-234749.png)
 
 #### MessageQueue是干嘛呢？用的什么数据结构来存储数据？
 
@@ -2495,7 +2495,7 @@ size=1960000
 
 首先放一张drawable目录对应的屏幕密度对照表,来自郭霖的博客：
 
-![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/5629CDEAC7F147058035512BC799ECEE/11594)
+![屏幕密度对照表](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-234916.png)
 
 刚才的案例，我们是把图片放到drawable-xxhdpi文件夹,而drawable-xxhdpi文件夹对应的dpi就是我们测试手机的dpi—480。所以图片的内存就是我们所计算的宽 *高* 每个像素所占字节。
 
@@ -3231,7 +3231,7 @@ Android 会为每个进程分配独立的虚拟内存空间，每个进程的虚
 4. 使用 ContentProvider 进行进程间通信，作为四大组件，底层使用的也是 Binder 来完成进程间通信的
 5. 使用 Socket，Socket 可以实现计算机网络中的两个进程间通信，当然也可以用于进程间通信服务端监听指定的端口，客户端链接指定的端口，成功建立链接以后，拿到 socket 对象客户端就可以向服务端发送消息，或者接受服务端传来的消息。
 
-![IPC方式的优缺点和适用场景](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/FD1F45D84A2C4AB49D8C9A0C67B07A85/11513)
+![IPC方式的优缺点和适用场景](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-235056.png)
 
 ### 什么是 Binder
 
@@ -3239,7 +3239,7 @@ Android 会为每个进程分配独立的虚拟内存空间，每个进程的虚
 
 ### Binder通信过程和原理
 
-![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/02B7E09317CF4EEDB7DBBAA7E8BF7D5C/11525)
+![Binder通信过程和原理](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-235222.png)
 
 首先要定义要传输的对象，并进行序列化，反序列化，然后在相同包名下定义 AIDL 接口、要传输的对象，然后定义好了以后，再 makeProject ，生成对应的类，然后再创建一个 Service 写服务端的代码，然后再客户端使用 bindService 方法进行连接，再 ServiceConnection 的回调方法中拿到服务端的接口对象，之后就可以往服务端发送消息。
 
@@ -3287,10 +3287,10 @@ Android 会为每个进程分配独立的虚拟内存空间，每个进程的虚
 ##### 下面描述 Binder 传输过程（A进程向B进程传递数据）
 
 1. 首先 Binder 驱动在内核空间开辟一块 **数据接收内存缓存区**
-2. 接着在内核空间开辟一块 **内核缓存区**，建**立内核缓存区**和**数据接收缓存区**的映射关系，以及内核中的**数据接收缓存区**和**B用户空间 缓存区**的映射关系。
+2. 接着在内核空间开辟一块 **内核缓存区**，建立**内核缓存区**和**数据接收缓存区**的映射关系，以及内核中的**数据接收缓存区**和**B用户空间 缓存区**的映射关系。
 3. **发送方进程 A 使用 copyfromuser（），将数据拷贝到内核缓存区，由于内核缓存区和数据接收缓存区有映射关系，数据接收缓存区和B进程的用户空间缓存区有映射关系，因此也就相当于把数据从 A 进程传递到了 B 进程。**
 
-![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/280ED7790E6C4E85AAAB68E2A3402F17/11547)
+![A进程向B进程传递数据](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-235354.png)
 
 #### 稳定性好
 
@@ -3598,7 +3598,7 @@ int measureSpec=MeasureSpec.makeMeasureSpec(size, mode);
 
  其次，每个子View的MeasureSpec值根据子View的布局参数和父容器的MeasureSpec值计算得来的，所以就有一个父布局测量模式，子视图布局参数，以及子view本身的MeasureSpec关系图：
 
-![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/AD62335285AB4171B3C6BC8D76F6ADAC/11281)
+![MeasureSpec关系图](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-235611.png)
 
 其实也就是getChildMeasureSpec方法的源码逻辑，会根据子View的布局参数和父容器的MeasureSpec计算出来单个子view的MeasureSpec。
 
@@ -3771,11 +3771,11 @@ dialog.window.setType(WindowManager.LayoutParams.TYPE_SYSTEM_DIALOG)
 
 首先是通过setContentView加载布局，这其中创建了一个DecorView，然后根据然后根据activity设置的主题（theme）或者特征（Feature）加载不同的根布局文件，最后再通过inflate方法加载layoutResID资源文件，其实就是解析了xml文件，根据节点生成了View对象。流程图：
 
-![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/7C467137C5F24A158C2AF2D0AED88E16/11459)
+![Activity创建流程图](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-235737.png)
 
 其次就是进行view绘制到界面上，这个过程发生在handleResumeActivity方法中，也就是触发onResume的方法。在这里会创建一个ViewRootImpl对象，作为DecorView的parent然后对DecorView进行测量布局和绘制三大流程。流程图：
 
-![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/D97FCBD0D33743F39D0AB951CA597869/11461)
+![流程图](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-235858.png)
 
 ### Activity、View、Window 之间的关系
 
@@ -4536,7 +4536,7 @@ Lru算法缓存->弱引用缓存->磁盘缓存（如果设置了的话）
 
 注：图片正在使用时存在于 activeResources 弱引用map中
 
-![](https://note.youdao.com/yws/public/resource/2f26be51ae82db6376558a01771e9114/xmlnote/A2A1DDF5F90845CCAA8CD38467EE6C08/12777)
+![Glide的三级缓存原理](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231016-000037.png)
 
 将图片缓存的时候，写入顺序：
 弱引用缓存->Lru算法缓存->磁盘缓存中

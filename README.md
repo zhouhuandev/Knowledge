@@ -2843,7 +2843,7 @@ System.exit(0)
 
 ### 启动流程
 
-![启动流程](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2021/images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210316102709.png)
+![启动流程](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-225912.png)
 
  启动流程回答步骤：
 
@@ -3002,7 +3002,7 @@ mPm.queryIntentActivitiesAsUser
 
 ### app启动交互逻辑
 
-![app启动交互逻辑](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2021/images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210316102715.jpg)
+![Launcher启动App流程](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-225809.png)
 
 ### Android系统中启动的第一个进程是哪个？
 

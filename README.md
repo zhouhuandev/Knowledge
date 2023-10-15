@@ -2853,7 +2853,7 @@ System.exit(0)
 
 #### 系统进程
 
-启动配置文件 `init.rc ` 
+系统启动过程中，先创建第一个用户空间进程 `init` 进程，在初始化的过程中，`init` 进程会读取启动配置文件 `init.rc `，解析出来对应 `Server` 服务进行启动。
 
 ```text
 service zygote /system/bin/app_process ...
@@ -2864,6 +2864,8 @@ service media /system/bin/mediaserver ...
 ```
 
 #### Zygote 是怎么启动的？
+
+`Zygote` 进程就是基于 `init` 进程 `fork` 出来，在 `Zygote` 进程初始化过程中，启动了 `Java` 虚拟机，注册 `JNI` 函数，并且预加载了大量系统资源，启动 `SystemServer` 服务，最后进入 `Socket Loop` 中，等待不断地接收消息与处理消息。
 
 - `init` 进程 `fork` 出 `zygote` 进程
 - 启动虚拟机，注册 `JNI` 函数
@@ -2897,7 +2899,17 @@ boolean runOnce() {
 
 #### SystemServer 是怎么启动的？
 
+`SystemServer` 通过 Zygote 进程启动后，会执行一系列的初始化和启动操作，包括启动核心系统服务、创建应用程序线程池、注册 Binder 服务等。`SystemServer` 进程完成初始化和启动后，系统的核心功能就准备就绪，其他应用程序可以开始启动了。例如：桌面。
+
 ```java
+// Zygote 进程中
+public static void main(String[] argv) {
+        ...
+        // 启动 SystemServer
+        startSystemServer();
+        ...
+}
+
 private static boolean startSystemServer(...) {
     String args[] = {
         ...

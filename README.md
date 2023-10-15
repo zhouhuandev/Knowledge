@@ -2835,9 +2835,158 @@ System.exit(0)
 
 ## 简述Android系统启动流程
 
+主要考察点在：
+
+1. Android有哪些主要的系统进程？
+2. 这些系统进程是怎么启动的？
+3. 进程启动之后主要做了些什么事情？
+
 ### 启动流程
 
 ![启动流程](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2021/images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210316102709.png)
+
+ 启动流程回答步骤：
+
+- Zygote是怎么启动的？
+- SystemServer是怎么启动的？
+- 系统服务是怎么启动的？
+
+#### 系统进程
+
+启动配置文件 `init.rc ` 
+
+```text
+service zygote /system/bin/app_process ...
+service servicemanager /system/bin/servicemanager ...
+service surfaceflinger /system/bin/surfaceflinger ...
+service media /system/bin/mediaserver ...
+等等...
+```
+
+#### Zygote 是怎么启动的？
+
+- `init` 进程 `fork` 出 `zygote` 进程
+- 启动虚拟机，注册 `JNI` 函数
+- 预加载系统资源
+- 启动 `SystemServer`
+- 进入 `Socket Loop`，不断地接收消息与处理消息
+
+#### Zygote 工作流程
+
+当 `Socket Loop` 有消息的时候，就会执行 `runOnce` 函数。
+
+`readArgumentList` 函数读取发过来的参数列表，通过 `forkAndSpecialize` 创建子进程， 该方法会返回两次，一个是从子进程返回 `pid == 0`，一个是从父进程返回该子进程的 `pid`
+
+```java
+boolean runOnce() {
+    String[] args = readArgumentList();
+    
+    int pid = Zygote.forkAndSpecialize(...);
+    
+    if(pid == 0) {
+        handleChildProc(parsedArgs, ...);
+        
+        // should never get here, the child is expected to either
+        // throw ZygoteInit.MethodAndArgsCaller or exec().
+        return true;
+    } else {
+        return handleParentProc(pid, ...);    
+    }
+}
+```
+
+#### SystemServer 是怎么启动的？
+
+```java
+private static boolean startSystemServer(...) {
+    String args[] = {
+        ...
+        "com.android.server.SystemServer",
+    };
+    
+    int pid = Zygote.forkSystemServer(...);
+    
+    if(pid == 0) {
+        handleSystemServerProcess(parsedArgs);    
+    }
+    
+    return true;
+}
+```
+
+```java
+void handleSystemServerProcess(Arguments parsedArgs) {
+    RuntimeInit.zygoteInit(parsedArgs.targetSdkVersion,
+        parsedArgs.remainingArgs, ...);
+}
+
+
+void zygoteInit(String[] argv, ...) {
+    commonInit(); // 常规的一些初始化
+    nativeZygoteInit(); // 主要调用了 onZygoteInit 方法，启动了Binder机制，并且启动了一个Binder线程，主要为了与其他进程进行通讯
+    applicationInit(argv, ...); // 主要是调用Java类的入口函数。
+}
+
+virtual void onZygoteInit() {
+    sp<ProcessState> proc = ProcessState::self();
+    proc->startThreadPool();
+}
+        
+void applicationInit() {
+    invokeStaticMain(args, ...);
+}
+// SystemServer main 函数，Java类的执行入口
+public static void main(String[] args) {
+    new SystemServer().run();
+}
+
+// SystemServer run 函数
+private void run() {
+    Looper.prepareMainLooper();
+    
+    System.loadLibrary("android_servers");
+    createSystemContext();
+    
+    // 分批启动
+    startBootstrapServices();
+    startCoreServices();
+    startOtherServices();
+    
+    Looper.loop();
+}
+
+```
+
+#### 怎么解析系统服务启动的互相依赖
+
+- 分批启动
+  - AMS
+  - PMS
+  - PKMS
+  - ...
+- 分阶段启动
+  - 阶段一
+  - 阶段二
+  - ...
+
+#### 桌面如何启动
+
+在 AMS 服务就绪的时候，会触发 `systemReady` 函数
+
+桌面其实也是一个系统级别的应用。  
+```java
+public void systemReady(final Runnable goingCallback) {
+        ...
+        startHomeActivityLocked(mCurrentUserId, "systemReady")
+        ...
+}
+// startHomeActivityLocked 会启动一个 LoaderTask
+mLoaderTask = new LoaderTask(mApp.getContext(), loadFlags);
+
+// mLoaderTask 会通过 pm 查询所有已安装的应用
+mPm.queryIntentActivitiesAsUser
+
+```
 
 ### app启动交互逻辑
 

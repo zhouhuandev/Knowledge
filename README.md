@@ -3004,6 +3004,14 @@ mPm.queryIntentActivitiesAsUser
 
 ![Launcher启动App流程](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-225809.png)
 
+讲完app启动逻辑以后，可以再介绍一下冷启动、温启动、热启动的内容。
+
+>冷启动是从启动进程开始。
+>温启动是进程起来了，要启动组建。
+>热启动是进程和组建都启动了，只需要从后台拉到前台。
+
+[冷启动、温启动、热启动](https://github.com/zhouhuandev/Knowledge#%E5%86%B7%E5%90%AF%E5%8A%A8%E6%B8%A9%E5%90%AF%E5%8A%A8%E7%83%AD%E5%90%AF%E5%8A%A8)
+
 ### Android系统中启动的第一个进程是哪个？
 
 (一般不会问这么深，可以作为知识扩展了解)

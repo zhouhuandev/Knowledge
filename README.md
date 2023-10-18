@@ -4727,6 +4727,120 @@ Gradle插件升级到5.0版本之后ButterKnife将无法再被使用，R文件�
 
 答：由于JVM 内联优化的机制，编译器将指定的函数体插入并取代每一处调用该函数的地方（就是在方法编译前已经进行了赋值），从而节省了每次调用函数带来的额外时间开支。
 
+## Gradle 基础
+
+### Gradle 打包流程
+
+#### 编译打包总体流程
+
+[Android Apk 编译打包流程](https://juejin.cn/post/7113713363900694565)
+
+![官方编译打包总体流程](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231018-230047.png)
+
+- 编译器将您的源代码转换成 `DEX` 文件（`Dalvik` 可执行文件，其中包括在 `Android` 设备上运行的字节码），并将其他所有内容转换成编译后的资源。
+- 打包器将 `DEX` 文件和编译后的资源组合成 `APK` 或 `AAB`（具体取决于所选的 `build` 目标）。
+- 打包器使用调试或发布密钥库为 `APK` 或 `AAB` 签名。
+- 在生成最终 `APK` 之前，打包器会使用 `zipalign` 工具对应用进行优化，以减少其在设备上运行时所占用的内存
+
+![编译打包流程](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231018-230935.png)
+
+#### 编译打包过程中的Task
+
+编译打包全 `Task` 内容
+```shell
+Executing tasks: [:app:assembleDebug] in project
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:compileDebugAidl NO-SOURCE
+> Task :app:compileDebugRenderscript NO-SOURCE
+> Task :app:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+> Task :app:dataBindingMergeGenClassesDebug UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:dataBindingGenBaseClassesDebug UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:mergeDebugShaders UP-TO-DATE
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:processDebugJavaRes NO-SOURCE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :app:mergeLibDexDebug UP-TO-DATE
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeDebugNativeLibs NO-SOURCE
+> Task :app:stripDebugDebugSymbols NO-SOURCE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :app:compileDebugKotlin
+> Task :app:compileDebugJavaWithJavac
+> Task :app:mergeDebugJavaResource UP-TO-DATE
+> Task :app:dexBuilderDebug UP-TO-DATE
+> Task :app:mergeProjectDexDebug
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect UP-TO-DATE
+> Task :app:assembleDebug
+
+BUILD SUCCESSFUL in 2s
+35 actionable tasks: 4 executed, 31 up-to-date
+```
+
+精选后的内容部分 `Task`
+
+```shell
+//aidl 转换aidl文件为java文件
+> Task :app:compileDebugAidl
+
+//生成BuildConfig文件
+> Task :app:generateDebugBuildConfig
+
+//获取gradle中配置的资源文件
+> Task :app:generateDebugResValues
+
+// merge资源文件，AAPT2 编译阶段
+> Task :app:mergeDebugResources
+
+// merge assets文件
+> Task :app:mergeDebugAssets
+> Task :app:compressDebugAssets
+
+// merge所有的manifest文件
+> Task :app:processDebugManifest
+
+//生成R文件 AAPT2 链接阶段
+> Task :app:processDebugResources
+
+//编译kotlin文件
+> Task :app:compileDebugKotlin
+
+//javac 编译java文件
+> Task :app:compileDebugJavaWithJavac
+
+//转换class文件为dex文件
+> Task :app:dexBuilderDebug
+
+//打包成apk并签名
+> Task :app:packageDebug
+```
+
+上面这些Task就对应于上面说的编译过程中的主要步骤，比如mergeDebugResources就对应于AAPT2的编译阶段，在Task结束后，会在build/intermediates/merged_res/文件夹中生成Flat文件。而processDebugResources则对应于AAPT2的链接阶段，会生成R.java与resources.arsc，并合并所有已编译的文件并将它们打包到一个软件包中。
+
 ## 介绍一下你们之前做的项目的架构
 
 这个问题大家就真实回答就好，重点是要说完后提出对自己项目架构的认同或不认同的观点，也就是要有自己的思考和想法。

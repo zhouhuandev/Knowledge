@@ -138,6 +138,15 @@ JVM内存模型是一种符合计算机内存模型规范，屏蔽了各种硬�
 
 ![JVM栈帧结构图](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-232121.png)
 
+| 区域                | 说明                                                          |
+| :----------------- | ------------------------------------------------------------ | 
+| 程序计数器           | 每条线程都需要有一个程序计数器，计数器记录的是正在执行的指令地址，如果正在执行的是 Natvie 方法，这个计数器值为空（Undefined）|
+| Java 虚拟机栈        | Java 方法执行的内存模型，每个方法执行的时候，都会创建一个栈帧用于保存局 部变量表，操作数栈，动态链接，方法出口信息等。一个方法调用的过程就是一 个栈帧从 VM 栈入栈到出栈的过程 |
+| 本地方法栈           | 与 VM 栈发挥的作用非常相似，VM 栈执行 Java 方法（字节码）服务，Native 方 法栈执行的是 Native 方法服务。 |
+| 方法区              | 方法区是各个内存所共享的内存空间，方法区中主要存放被 JVM 加载的类信息、 常量、静态变量、即时编译后的代码等数据。 |
+
+注：方法区与堆区是线程共享数据区，虚拟机栈、本地方法栈与程序计数器为线程私有数据区。
+
 ### 什么情况下内存栈溢出
 
 栈溢出就是会无限递归startOverFlow
@@ -164,15 +173,64 @@ JVM内存模型是一种符合计算机内存模型规范，屏蔽了各种硬�
 
 大部分虚拟机都是使用的可达性算法
 
+#### 引用计数
+每个对象有一个引用计数属性，新增一个引用时计数加 1，引用释放时计数减 1，计数为 0 时 可以回收。此方法简单，无法解决对象相互循环引用的问题。
+
+#### 可达性分析
+
+从 GC Roots 开始向下搜索，搜索所走过的路径称为引用链。当一个对象到 GC Roots 没有任何引用链相连时，则证明此对象是不可用的。不可达对象。
+
+在 Java 语言中，GC Roots 包括：
+- 虚拟机栈中引用的对象
+- 方法区中类静态属性实体引用的对象。
+- 方法区中常量引用的对象。
+- 本地方法栈中 JNI 引用的对象。
+
 ![可达性算法](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-232639.png)
 
 ### GC收集算法有哪些？他们的特点是什么？
 
+#### 分代收集算法
+
+GC 分代的基本假设：绝大部分对象的生命周期都非常短暂，存活时间短。
+
+“分代收集”（Generational Collection）算法，把 Java 堆分为新生代和老年代，这样就可以根据各个年代的特点采用最适当的收集算法。在新生代中，每次垃圾收集时都发现有大批对象死去，只有少量存活，那就选用复制算法，只需要付出少量存活对象的复制成本就可以完成收集。而老年代中因为对象存活率高、没有额外空间对它进行分配担保，就必须使用“标记- 清理”或“标记-整理”算法来进行回收。
+
 ![垃圾回收器](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-233801.png)
+
+堆空间 = 新生代(1/3)+ 老年代(2/3)
+
+新生代 = Eden(8/10) + From(1/10) + To(1/10)
+
+Java 堆（Java Heap）是 JVM 所管理的内存中最大的一块，堆又是垃圾收集器管理的主要区 域，Java 堆主要分为 2 个区域-年轻代与老年代，其中年轻代又分 Eden 区和 Survivor 区， 其中 Survivor 区又分 From 和 To 2 个区。
+
+##### Eden 区
+
+大多数情况下，对象会在新生代 Eden 区中进行分配，当 Eden 区没有足够空间进行分配时，虚拟机会发起一次 Minor GC，Minor GC 相比 Major GC 更频繁，回收速度也更快。通过Minor GC 之后，Eden 会被清空，Eden 区中绝大部分对象会被回收，而那些无需回收的存活对象，将会进到 Survivor 的 From 区（若 From 区不够，则直接进入 Old 区）。
+
+##### Survivor 区
+
+Survivor 区相当于是 Eden 区和 Old 区的一个缓冲，类似于我们交通灯中的黄灯。Survivor 又分为 2 个区，一个是 From 区，一个是 To 区。每次执行 Minor GC，会将 Eden 区和 From存活的对象放到 Survivor 的 To 区（如果 To 区不够，则直接进入 Old 区）。Survivor 的存在意义就是减少被送到老年代的对象，进而减少 Major GC 的发生。Survivor 的预筛选保证，只有经历 16 次 Minor GC 还能在新生代中存活的对象，才会被送到老年代。
+
+##### Old 区
+
+老年代占据着 2/3 的堆内存空间，只有在 Major GC 的时候才会进行清理，每次 GC 都会触发“Stop-The-World”。内存越大，STW 的时间也越长，所以内存也不仅仅是越大就越好。由于复制算法在对象存活率较高的老年代会进行很多次的复制操作，效率很低，所以老年代这里采用的是标记——整理算法。
+
+#### 复制算法
+
+“复制”（Copying）的收集算法，它将可用内存按容量划分为大小相等的两块，每次只使用其中的一块。当这一块的内存用完了，就将还存活着的对象复制到另外一块上面，然后再把已 使用过的内存空间一次清理掉。这样使得每次都是对其中的一块进行内存回收，内存分配时也就不用考虑内存碎片等复杂情况，只要移动堆顶指针，按顺序分配内存即可，实现简单，运行高效。只是这种算法的代价是将内存缩小为原来的一半，持续复制长生存期的对象则导致效率降低。
 
 ![复制算法](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-233934.png)
 
+#### 标记 -清除算法
+
+“标记-清除”（Mark-Sweep）算法，如它的名字一样，算法分为“标记”和“清除”两个阶段：首 先标记出所有需要回收的对象，在标记完成后统一回收掉所有被标记的对象。之所以说它是 最基础的收集算法，是因为后续的收集算法都是基于这种思路并对其缺点进行改进而得到的。 它的主要缺点有两个：一个是效率问题，标记和清除过程的效率都不高；另外一个是空间问题，标记清除之后会产生大量不连续的内存碎片，空间碎片太多可能会导致，当程序在以后的运行过程中需要分配较大对象时无法找到足够的连续内存而不得不提前触发另一次垃圾收 集动作。
+
 ![标记清除算法](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-234105.png)
+
+#### 标记-整理算法
+
+复制收集算法在对象存活率较高时就要执行较多的复制操作，效率将会变低。更关键的是，如果不想浪费 50%的空间，就需要有额外的空间进行分配担保，以应对被使用的内存中所有对象都 100%存活的极端情况，所以在老年代一般不能直接选用这种算法。根据老年代的特点，有人提出了另外一种“标记-整理”（Mark-Compact）算法，标记过程仍然与“标记-清除”算法一样，但后续步骤不是直接对可回收对象进行清理，而是让所有存活的对象都向一端移动，然后直接清理掉端边界以外的内存。
 
 ![标记整理算法](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231015-234211.png)
 
@@ -209,6 +267,12 @@ try{
 finalize
 
 finalize基本上不怎么用，不是非常的可靠
+
+### String、StringBuffer、StringBuilder
+
+- String 是 final 类，不能被继承。对于已经存在的 Stirng 对象，修改它的值，就是重 新创建一个对象
+- StringBuffer 是一个类似于 String 的字符串缓冲区，使用 append() 方法修改 Stringbuffer 的值，使用 toString() 方法转换为字符串，是线程安全的
+- StringBuilder 用来替代于 StringBuffer，StringBuilder 是非线程安全的，速度更快
 
 ### String s = new String（“xxx”）;创建了几个对象？
 
@@ -432,6 +496,12 @@ Java语言提供了 **volatile** 和 **synchronized** 两个关键字来保证�
 - 保证⽅法内部或代码块内部资源（数据）的互斥访问。即同⼀时间、由同⼀个 Monitor 监视的代码，最多只能有⼀个线程在访问
 - 保证线程之间对监视资源的数据同步。即，任何线程在获取到 Monitor后的第⼀时间，会先将共享内存中的数据复制到⾃⼰的缓存中；任何线程在释放 Monitor 的第⼀时间，会先将缓存中的数据复制到共享内存中。
 
+同步代码块
+- monitorenter 和 monitorexit 指令实现的
+
+同步方法
+- 方法修饰符上的 ACC_SYNCHRONIZED 实现
+
 #### Synchronize应用场景
 
 Synchronize一般应用于以下几个场景：
@@ -551,9 +621,19 @@ Synchronize在1.6版本之前性能较差，在并发不严重的情况下，因
 
 ### Volatile
 
+当把变量声明为 volatile 类型后，编译器与运行时都会注意到这个变量是共享的，因此不会将该变量上的操作与其他内存操作一起重排序。volatile 变量不会被缓存在寄存器或者对其他处理器不可见的地方，JVM 保证了每次读变量都从内存中读，跳过 CPU cache 这一步，因此在读取 volatile 类型的变量时总会返回最新写入的值。
+
+![Volatile原理图](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231030-124005.jpg)
+
+当一个变量定义为 volatile 之后，将具备以下特性:
+- **保证此变量对所有的线程的可见性，不能保证它具有原子性**（可见性，是指线程之间的可见性，一个线程修改的状态对另一个线程是可见的）
+- **禁止指令重排序优化**
+- volatile 的读性能消耗与普通变量几乎相同，但是写操作稍慢，因为它需要在本地代码中插入许多内存屏障指令来保证处理器不发生乱序执行
 - 保证加了 volatile 关键字的字段的操作具有同步性，以及对 long 和 double 的操作的原⼦性（long double 原⼦性这个简单说⼀下就⾏）。因此 volatile 可以看做是简化版的 synchronized。
 - volatile 只对基本类型 (byte、char、short、int、long、ﬂoat、double、boolean) 的赋值操作和对象的引⽤赋值操作有效，你要修改 User.name 是不能保证同步的。
 - volatile 依然解决不了 ++ 的原⼦性问题。
+
+AtomicInteger 中主要实现了整型的原子操作，防止并发情况下出现异常结果，其内部主要依靠 JDK 中的 unsafe 类操作内存中的数据来实现的。volatile 修饰符保证了 value 在内存中其他线程可以看到其值得改变。CAS（Compare and Swap）操作保证了 AtomicInteger 可以安全的修改 value 的值。
 
 ### ReentrantLock和Synchronized对比
 
@@ -3062,6 +3142,8 @@ init进程是Android系统中用户空间的第一个进程，是所有用户进
 
 ### 生命周期七种方法
 
+![Activity生命周期](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231030-131041.png)
+
 - onCreate()方法：Activity首次创建时被调用。用于设置Activity的布局文件，绑定按钮监听器等一些普通静态操作。
 - onStart()方法：在Activity即将可见时调用。
 - onResume()方法：在Activity获取焦点开始与用户交互时调用。
@@ -3069,6 +3151,10 @@ init进程是Android系统中用户空间的第一个进程，是所有用户进
 - onStop()方法：在Activity对用户不可见时调用。
 - onDestroy()方法：调用Activity的finish()方法或Android系统资源不足时被调用。
 - onRestart()方法：在Activity从停止状态再次启动时调用
+
+Activity A 启动另一个 Activity B，回调如下:
+
+Activity A 的 onPause() → Activity B 的 onCreate() → onStart() → onResume() → ActivityA 的 onStop()；如果 B 是透明主题又或则是个 DialogActivity，则不会回调 A 的 onStop；
 
 ### 生命周期五种状态
 
@@ -3162,6 +3248,8 @@ FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
 
 ### Fragment生命周期，当hide，show，replace时候生命周期变化
 
+![Fragment生命周期](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231030-131428.png)
+
 1）生命周期：
 
 - onAttach()：Fragment和Activity相关联时调用。可以通过该方法获取Activity引用，还可以通过getArguments()获取参数。
@@ -3223,6 +3311,18 @@ public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle sa
 }
 ```
 
+### Service
+
+Service 分为两种工作状态，一种是启动状态，主要用于执行后台计算；另一种是绑定状态，主要用于其他组件和 Service 的交互。
+
+![Service生命周期](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2023/images/20231030-131713.png)
+
+|         值         |             说明            |
+| :----------------  |  -------------------------- |
+| START_NOT_STICKY  | 如果系统在 onStartCommand() 返回后终止服务，则除非有挂起Intent 要传递，否则系统不会重建服务。这是最安全的选项，可以避免在不必要时以及应用能够轻松重启所有未完成的作业时运行服务 |
+| START_STICKY      | 如果系统在 onStartCommand() 返回后终止服务，则会重建服务并调用 onStartCommand()，但不会重新传递最后一个 Intent。相反，除非有挂起 Intent 要启动服务（在这种情况下，将传递这些Intent ），否则系统会通过空 Intent 调用 onStartCommand()。这适用于不执行命令、但无限期运行并等待作业的媒体播放器或类似服务 | 
+| START_REDELIVER_INTENT | 如果系统在 onStartCommand() 返回后终止服务，则会重建服务，并通过传递给服务的最后一个 Intent调用 onStartCommand()。任何挂起 Intent 均依次传递。这适用于主动执行应该立即恢复的作业（例如下载文件）的服务 |
+
 ## 进程间通讯
 
 ### Binder机制和AIDL
@@ -3230,6 +3330,13 @@ public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle sa
 #### 为什么要使用 Binder 机制
 
 Android 会为每个进程分配独立的虚拟内存空间，每个进程的虚拟地址空间是互相隔离的，如果进程间要进行互相通信，就要使用 Android 提供的 Binder 机制来进行通信。
+
+Binder 是 Android 中的一个类，实现了 IBinder 接口。从 IPC 角度来说，Binder 是 Android 中的一种扩进程通信方方式。从 Android 应用层来说，Binder 是客户端和服务器端进行通信的媒介，当 bindService 的时候，服务端会返回一个包含了服务端业务调用的 Binder 对象。
+
+Binder 相较于传统 IPC 来说更适合于 Android 系统，具体原因的包括如下三点：
+- Binder 本身是 C/S 架构的，这一点更符合 Android 系统的架构
+- 性能上更有优势：管道，消息队列，Socket 的通讯都需要两次数据拷贝，而 Binder 只需要一次。要知道，对于系统底层的 IPC 形式，少一次数据拷贝，对整体性能的影响是非常之大的
+- 安全性更好：传统 IPC 形式，无法得到对方的身份标识（UID/GID)，而在使用 Binder IPC 时，这些身份标示是跟随调用过程而自动传递的。Server 端很容易就可以知道Client 端的身份，非常便于做安全检查
 
 #### 进程间通信的方式
 
@@ -3387,6 +3494,14 @@ Hook 过程：
 - WindowManager：外界访问 Window 的入口 管理Window 中的View , 内部通过 Binder 与 WMS IPC 进程交互。
 - WMS：管理窗口 Surface 的布局和次序，作为系统级服务单独运行在一个进程。
 - SurfaceFlinger：将 WMS 维护的窗口按一定次序混合后显示到屏幕上。
+
+Window 是一个抽象类，它的具体实现是 PhoneWindow。WindowManager 是外界访问 Window 的入口，Window 的具体实现位于 WindowManagerService 中，WindowManager和 WindowManagerService 的交互是一个 IPC 过程。Android 中所有的视图都是通过Window 来呈现，因此 Window 实际是 View 的直接管理者。
+
+| Window 类型 | 说明 | 层级 |
+| :----------------- | ----------- | ---------- |
+| Application Window | 对应着一个 Activity | 1~99 |
+| Sub Window | 不能单独存在，只能附属在父 Window 中，如 Dialog 等 | 1000~1999 |
+| System Window | 需要权限声明，如 Toast 和 系统状态栏等 | 2000~2999 |
 
 ### View 工作流程
 
@@ -6353,3 +6468,944 @@ B拿到后，签名用公钥解密出来，然后和传过来数据的哈希值�
 其实在服务器证书和根证书中间还有一层结构：叫中级证书，我们可以任意点开一个网页，点击左上角的🔒按钮就可以看到证书详情：
 
 ![微信图片_20210316115054.jpg](https://raw.githubusercontent.com/zhouhuandev/ImageRepo/master/2021/images/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210316115054.jpg)
+
+## 常见算法
+
+### 排序
+
+#### 比较排序
+
+##### 冒泡排序
+
+重复地走访过要排序的数列，每次比较相邻两个元素，如果它们的顺序错误就把它们交换过来，越大的元素会经由交换慢慢“浮”到数列的尾端。
+
+```java
+    public void bubbleSort(int[] arr) {
+        int temp = 0;
+        boolean swap;
+        for (int i = arr.length - 1; i > 0; i--) { // 每次需要排序的长度
+            // 增加一个 swap 的标志，当前一轮没有进行交换时，说明数组已经有序
+            swap = false;
+            for (int j = 0; j < i; j++) { // 从第一个元素到第 i 个元素
+                if (arr[j] > arr[j + 1]) {
+                    temp = arr[j];
+                    arr[j] = arr[j + 1];
+                    arr[j + 1] = temp;
+                    swap = true;
+                }
+            }
+            if (!swap) {
+                break;
+            }
+        }
+    }
+```
+
+##### 归并排序
+
+分解待排序的数组成两个各具 n/2 个元素的子数组，递归调用归并排序两个子数组，合并两 个已排序的子数组成一个已排序的数组。
+
+```java
+    public void mergeSort(int[] arr) {
+        int[] temp = new int[arr.length];
+        internalMergeSort(arr, temp, 0, arr.length - 1);
+    }
+
+    private void internalMergeSort(int[] arr, int[] temp, int left, int right) {
+        // 当 left == right 时，不需要再划分
+        if (left < right) {
+            int mid = (left + right) / 2;
+            internalMergeSort(arr, temp, left, mid);
+            internalMergeSort(arr, temp, mid + 1, right);
+            mergeSortedArray(arr, temp, left, mid, right);
+        }
+    }
+
+    // 合并两个有序子序列 
+    public void mergeSortedArray(int[] arr, int[] temp, int left, int mid,
+                                 int right) {
+        int i = left;
+        int j = mid + 1;
+        int k = 0;
+        while (i <= mid && j <= right) {
+            temp[k++] = arr[i] < arr[j] ? arr[i++] : arr[j++];
+        }
+        while (i <= mid) {
+            temp[k++] = arr[i++];
+        }
+        while (j <= right) {
+            temp[k++] = arr[j++];
+        }
+        // 把 temp 数据复制回原数组
+        for (i = 0; i < k; i++) {
+            arr[left + i] = temp[i];
+        }
+    }
+```
+
+##### 快速排序
+
+在待排序的数组选取一个元素作为基准，将待排序的元素进行分区，比基准元素大的元素放在一边，比其小的放另一边，递归调用快速排序对两边的元素排序。选取基准元素并分区的过程采用双指针左右交换。
+
+```java
+    public void quickSort(int[] arr) {
+        quickSort(arr, 0, arr.length - 1);
+    }
+
+    private void quickSort(int[] arr, int low, int high) {
+        if (low >= high)
+            return;
+        int pivot = partition(arr, low, high); //将数组分为两部分
+        quickSort(arr, low, pivot - 1); //递归排序左子数组
+        quickSort(arr, pivot + 1, high); //递归排序右子数组
+    }
+
+    private int partition(int[] arr, int low, int high) {
+        int pivot = arr[low]; //基准
+        while (low < high) {
+            while (low < high && arr[high] >= pivot) {
+                high--;
+            }
+            arr[low] = arr[high]; //交换比基准大的记录到左端
+            while (low < high && arr[low] <= pivot) {
+                low++;
+            }
+            arr[high] = arr[low]; //交换比基准小的记录到右端
+        }
+        //扫描完成，基准到位
+        arr[low] = pivot;
+        //返回的是基准的位置
+        return low;
+    }
+```
+
+#### 线性排序
+
+##### 计数排序
+
+根据待排序的数组中最大和最小的元素，统计数组中每个值为 i 的元素出现的次数，存入数组C 的第 i 项，对所有的计数累加，然后反向填充目标数组。
+
+```java
+    public void countSort(int[] arr) {
+        int max = Integer.MIN_VALUE;
+        int min = Integer.MAX_VALUE;
+        for (int i = 0; i < arr.length; i++) {
+            max = Math.max(max, arr[i]);
+            min = Math.min(min, arr[i]);
+        }
+        int[] b = new int[arr.length]; // 存储数组
+        int[] count = new int[max - min + 1]; // 计数数组
+        for (int num = min; num <= max; num++) {
+            // 初始化各元素值为 0，数组下标从 0 开始因此减 min
+            count[num - min] = 0;
+        }
+        for (int i = 0; i < arr.length; i++) {
+            int num = arr[i];
+            count[num - min]++; // 每出现一个值，计数数组对应元素的值+1
+            // 此时 count[i]表示数值等于 i 的元素的个数
+        }
+        for (int i = min + 1; i <= max; i++) {
+            count[i - min] += count[i - min - 1];
+            // 此时 count[i]表示数值<=i 的元素的个数
+        }
+        for (int i = 0; i < arr.length; i++) {
+            int num = arr[i]; // 原数组第 i 位的值
+            int index = count[num - min] - 1; //加总数组中对应元素的下标
+            b[index] = num; // 将该值存入存储数组对应下标中
+            count[num - min]--; // 加总数组中，该值的总和减少 1。
+        }
+        // 将存储数组的值替换给原数组
+        for (int i = 0; i < arr.length; i++) {
+            arr[i] = b[i];
+        }
+    }
+```
+
+##### 桶排序
+
+找出待排序数组中的最大值max、最小值min，数组ArrayList作为桶，桶里放的元素用ArrayList存储。计算每个元素 arr[i] 放的桶，每个桶各自排序，遍历桶数组，把排序好的元素放进输出数组。
+
+```java
+    public static void bucketSort(int[] arr) {
+        int max = Integer.MIN_VALUE;
+        int min = Integer.MAX_VALUE;
+        for (int i = 0; i < arr.length; i++) {
+            max = Math.max(max, arr[i]);
+            min = Math.min(min, arr[i]);
+        }
+        // 桶数
+        int bucketNum = (max - min) / arr.length + 1;
+        ArrayList<ArrayList<Integer>> bucketArr = new ArrayList<>(bucketNum);
+        for (int i = 0; i < bucketNum; i++) {
+            bucketArr.add(new ArrayList<Integer>());
+        }
+        // 将每个元素放入桶
+        for (int i = 0; i < arr.length; i++) {
+            int num = (arr[i] - min) / (arr.length);
+            bucketArr.get(num).add(arr[i]);
+        }
+        // 对每个桶进行排序
+        for (int i = 0; i < bucketArr.size(); i++) {
+            Collections.sort(bucketArr.get(i));
+            for (int j = 0; j < bucketArr.get(i).size(); j++) {
+                arr[j] = bucketArr.get(i).get(j);
+            }
+        }
+    }
+```
+
+### 二叉树
+
+```java
+public class TreeNode {
+    public int val;
+    public TreeNode left;
+    public TreeNode right;
+    public TreeNode(int val) {
+        this.val = val;
+    }
+}
+```
+
+#### 顺序遍历
+
+先序遍历: 根->左->右
+
+中序遍历: 左->根->右
+
+后序遍历: 左->右->根
+
+```java
+    // 先序遍历
+    public void preTraverse(TreeNode root) {
+        if (root != null) {
+            System.out.println(root.val);
+            preTraverse(root.left);
+            preTraverse(root.right);
+        }
+    }
+
+    // 中序遍历 
+    public void inTraverse(TreeNode root) {
+        if (root != null) {
+            inTraverse(root.left);
+            System.out.println(root.val);
+            inTraverse(root.right);
+        }
+    }
+
+    // 后序遍历 
+    public void postTraverse(TreeNode root) {
+        if (root != null) {
+            postTraverse(root.left);
+            postTraverse(root.right);
+            System.out.println(root.val);
+        }
+    }
+```
+
+#### 层次遍历
+
+```java
+    // 层次遍历(DFS)
+    public List<List<Integer>> levelOrder(TreeNode root) {
+        List<List<Integer>> res = new ArrayList<>();
+        if (root == null) {
+            return res;
+        }
+        dfs(root, res, 0);
+        return res;
+    }
+
+    private void dfs(TreeNode root, List<List<Integer>> res, int level) {
+        if (root == null) {
+            return;
+        }
+        if (level == res.size()) {
+            res.add(new ArrayList<>());
+        }
+        res.get(level).add(root.val);
+        dfs(root.left, res, level + 1);
+        dfs(root.right, res, level + 1);
+    }
+
+    // 层次遍历(BFS)
+    public List<List<Integer>> levelOrder(TreeNode root) {
+        List result = new ArrayList();
+        if (root == null) {
+            return result;
+        }
+        Queue<TreeNode> queue = new LinkedList<TreeNode>();
+        queue.offer(root);
+        while (!queue.isEmpty()) {
+            ArrayList<Integer> level = new ArrayList<Integer>();
+            int size = queue.size();
+            for (int i = 0; i < size; i++) {
+                TreeNode head = queue.poll();
+                level.add(head.val);
+                if (head.left != null) {
+                    queue.offer(head.left);
+                }
+                if (head.right != null) {
+                    queue.offer(head.right);
+                }
+            }
+            result.add(level);
+        }
+        return result;
+    }
+
+    // "Z"字遍历
+    public List<List<Integer>> zigzagLevelOrder(TreeNode root) {
+        List<List<Integer>> result = new ArrayList<>();
+        if (root == null) {
+            return result;
+        }
+        Queue<TreeNode> queue = new LinkedList<>();
+        queue.offer(root);
+        boolean isFromLeft = false;
+        while (!queue.isEmpty()) {
+            int size = queue.size();
+            isFromLeft = !isFromLeft;
+            List<Integer> list = new ArrayList<>();
+            for (int i = 0; i < size; i++) {
+                TreeNode node;
+                if (isFromLeft) {
+                    node = queue.pollFirst();
+                } else {
+                    node = queue.pollLast();
+                }
+                list.add(node.val);
+                if (isFromLeft) {
+                    if (node.left != null) {
+                        queue.offerLast(node.left);
+                    }
+                    if (node.right != null) {
+                        queue.offerLast(node.right);
+                    }
+                } else {
+                    if (node.right != null) {
+                        queue.offerFirst(node.right);
+                    }
+                    if (node.left != null) {
+                        queue.offerFirst(node.left);
+                    }
+                }
+            }
+            result.add(list);
+        }
+        return result;
+    }
+```
+
+#### 左右翻转
+
+```java
+    public void invert(TreeNode root) {
+        if (root == null) {
+            return;
+        }
+        TreeNode temp = root.left;
+        root.left = root.right;
+        root.right = temp;
+        invert(root.left);
+        invert(root.right);
+    }
+```
+
+#### 最大值
+
+```java
+    public int getMax(TreeNode root) {
+        if (root == null) {
+            return Integer.MIN_VALUE;
+        } else {
+            int left = getMax(root.left);
+            int right = getMax(root.right);
+            return Math.max(Math.max(left, right), root.val);
+        }
+    }
+```
+
+#### 最大深度
+
+```java
+    public int maxDepth(TreeNode root) {
+        if (root == null) {
+            return 0;
+        }
+        int left = maxDepth(root.left);
+        int right = maxDepth(root.right);
+        return Math.max(left, right) + 1;
+    }
+```
+
+#### 最小深度
+
+```java
+    public int minDepth(TreeNode root) {
+        if (root == null) {
+            return 0;
+        }
+        int left = minDepth(root.left);
+        int right = minDepth(root.right);
+        if (left == 0) {
+            return right + 1;
+        } else if (right == 0) {
+            return left + 1;
+        } else {
+            return Math.min(left, right) + 1;
+        }
+    }
+```
+
+#### 平衡二叉树
+
+平衡二叉树每一个节点的左右两个子树的高度差不超过 1
+
+```java
+    public boolean isBalanced(TreeNode root) {
+        return maxDepth(root) != -1;
+    }
+
+    private int maxDepth(TreeNode root) {
+        if (root == null) {
+            return 0;
+        }
+        int left = maxDepth(root.left);
+        int right = maxDepth(root.right);
+        if (left == -1 || right == -1 || Math.abs(left - right) > 1) {
+            return -1;
+        }
+        return Math.max(left, right) + 1;
+    }
+```
+
+### 链表
+
+```java
+public class ListNode {
+    public int val;
+    public ListNode next;
+
+    public ListNode() {
+    }
+
+    public ListNode(int val) {
+        this.val = val;
+    }
+
+    public ListNode(int val, ListNode next) {
+        this.val = val;
+        this.next = next;
+    }
+}
+```
+
+#### 删除节点
+
+```java
+    public void deleteNode(ListNode node) {
+        if (node.next == null) {
+            node = null;
+            return;
+        }
+        // 取缔下一节点
+        node.val = node.next.val;
+        node.next = node.next.next;
+    }
+```
+
+#### 翻转链表
+
+```java
+    public ListNode reverse(ListNode head) {
+        //prev 表示前继节点
+        ListNode prev = null;
+        while (head != null) {
+            //temp 记录下一个节点，head 是当前节点
+            ListNode temp = head.next;
+            head.next = prev;
+            prev = head;
+            head = temp;
+        }
+        return prev;
+    }
+```
+
+#### 中间元素
+
+```java
+    public ListNode findMiddle(ListNode head) {
+        if (head == null) {
+            return null;
+        }
+        ListNode slow = head;
+        ListNode fast = head;
+        // fast.next = null 表示 fast 是链表的尾节点
+        while (fast != null && fast.next != null) {
+            fast = fast.next.next;
+            slow = slow.next;
+        }
+        return slow;
+    }
+```
+
+#### 判断是否为循环链表
+
+```java
+    public Boolean hasCycle(ListNode head) {
+        if (head == null || head.next == null) {
+            return false;
+        }
+        ListNode slow = head;
+        ListNode fast = head.next;
+        while (fast != slow) {
+            if(fast == null || fast.next == null) {
+                return false;
+            }
+            fast = fast.next.next;
+            slow = slow.next;
+        }
+        return true;
+    }
+```
+
+#### 合并两个已排序链表
+
+```java
+    public ListNode mergeTwoLists(ListNode l1, ListNode l2) {
+        ListNode dummy = new ListNode(0);
+        ListNode lastNode = dummy;
+        while (l1 != null && l2 != null) {
+            if (l1.val < l2.val) {
+                lastNode.next = l1;
+                l1 = l1.next;
+            } else {
+                lastNode.next = l2;
+                l2 = l2.next;
+            }
+            lastNode = lastNode.next;
+        }
+        if (l1 != null) {
+            lastNode.next = l1;
+        } else {
+            lastNode.next = l2;
+        }
+        return dummy.next;
+    }
+```
+
+#### 链表排序
+
+可利用归并、快排等算法实现
+
+```java
+    // 归并排序 
+    public ListNode sortList(ListNode head) {
+        if (head == null || head.next == null) {
+            return head;
+        }
+        ListNode mid = findMiddle(head);
+        ListNode right = sortList(mid.next);
+        mid.next = null;
+        ListNode left = sortList(head);
+        return mergeTwoLists(left, right);
+    }
+
+    // 快速排序 
+    public ListNode sortList(ListNode head) {
+        quickSort(head, null);
+        return head;
+    }
+
+    private void quickSort(ListNode start, ListNode end) {
+        if (start == end) {
+            return;
+        }
+        ListNode pt = partition(start, end);
+        quickSort(start, pt);
+        quickSort(pt.next, end);
+    }
+
+    private ListNode partition(ListNode start, ListNode end) {
+        int pivotKey = start.val;
+        ListNode p1 = start, p2 = start.next;
+        while (p2 != end) {
+            if (p2.val < pivotKey) {
+                p1 = p1.next;
+                swapValue(p1, p2);
+            }
+            p2 = p2.next;
+        }
+        swapValue(start, p1);
+        return p1;
+    }
+
+    private void swapValue(ListNode node1, ListNode node2) {
+        int tmp = node1.val;
+        node1.val = node2.val;
+        node2.val = tmp;
+    }
+```
+
+#### 删除倒数第 N 个节点
+
+```java
+    public ListNode removeNthFromEnd(ListNode head, int n) {
+        if (n <= 0) {
+            return null;
+        }
+        ListNode dummy = new ListNode(0);
+        dummy.next = head;
+        ListNode preDelete = dummy;
+        for (int i = 0; i < n; i++) {
+            if (head == null) {
+                return null;
+            }
+            head = head.next;
+        }
+        // 此时 head 为正数第 N 个节点
+        while (head != null) {
+            head = head.next;
+            preDelete = preDelete.next;
+        }
+        preDelete.next = preDelete.next.next;
+        return dummy.next;
+    }
+```
+
+#### 两个链表是否相交
+
+```java
+    public ListNode getIntersectionNode(ListNode headA, ListNode headB) {
+        if (headA == null || headB == null) {
+            return null;
+        }
+        ListNode currA = headA;
+        ListNode currB = headB;
+        int lengthA = 0;
+        int lengthB = 0;
+        // 让长的先走到剩余长度和短的一样
+        while (currA != null) {
+            currA = currA.next;
+            lengthA++;
+        }
+        while (currB != null) {
+            currB = currB.next;
+            lengthB++;
+        }
+        currA = headA;
+        currB = headB;
+        while (lengthA > lengthB) {
+            currA = currA.next;
+            lengthA--;
+        }
+        while (lengthB > lengthA) {
+            currB = currB.next;
+            lengthB--;
+        }
+        // 然后同时走到第一个相同的地方
+        while (currA != currB) {
+            currA = currA.next;
+            currB = currB.next;
+        }
+        // 返回交叉开始的节点
+        return currA;
+    }
+```
+
+### 栈 / 队列
+
+#### 带最小值操作的栈
+
+实现一个栈, 额外支持一个操作：min() 返回栈中元素的最小值
+
+```java
+public class MinStack {
+    private Stack<Integer> stack;
+    private Stack<Integer> minStack; // 维护一个辅助栈，传入当前栈的最小值
+
+    public MinStack() {
+        stack = new Stack<Integer>();
+        minStack = new Stack<Integer>();
+    }
+
+    public void push(int number) {
+        stack.push(number);
+        if (minStack.isEmpty()) {
+            minStack.push(number);
+        } else {
+            minStack.push(Math.min(number, minStack.peek()));
+        }
+    }
+
+    public int pop() {
+        minStack.pop();
+        return stack.pop();
+    }
+
+    public int min() {
+        return minStack.peek();
+    }
+}
+```
+
+#### 有效括号
+
+给定一个字符串所表示的括号序列，包含以下字符： '(', ')', '{', '}', '[' and ']'， 判 定是否是有效的括号序列。括号必须依照 "()" 顺序表示， "()[]{}" 是有效的括号，但 "([)]" 则是无效的括号。
+
+```java
+    public boolean isValidParentheses(String s) {
+        Stack<Character> stack = new Stack<Character>();
+        for (Character c : s.toCharArray()) {
+            if ("({[".contains(String.valueOf(c))) {
+                stack.push(c);
+            } else {
+                if (!stack.isEmpty() && isValid(stack.peek(), c)) {
+                    stack.pop();
+                } else {
+                    return false;
+                }
+            }
+        }
+        return stack.isEmpty();
+    }
+
+    private boolean isValid(char c1, char c2) {
+        return (c1 == '(' && c2 == ')') || (c1 == '{' && c2 == '}')
+                || (c1 == '[' && c2 == ']');
+    }
+```
+
+#### 用栈实现队列
+
+```java
+public class MyQueue {
+    private Stack<Integer> outStack;
+    private Stack<Integer> inStack;
+    public MyQueue() {
+        outStack = new Stack<Integer>();
+        inStack = new Stack<Integer>();
+    }
+    private void in2OutStack(){
+        while(!inStack.isEmpty()){
+            outStack.push(inStack.pop());
+        }
+    }
+    public void push(int element) {
+        inStack.push(element);
+    }
+    public int pop() {
+        if(outStack.isEmpty()){
+            this.in2OutStack();
+        }
+        return outStack.pop();
+    }
+    public int top() {
+        if(outStack.isEmpty()){
+            this.in2OutStack();
+        }
+        return outStack.peek();
+    }
+}
+```
+
+#### 逆波兰表达式求值
+
+在反向波兰表示法中计算算术表达式的值, ["2", "1", "+", "3", "*"] -> (2 + 1) * 3 -> 9
+
+```java
+    public int evalRPN(String[] tokens) {
+        Stack<Integer> s = new Stack<Integer>();
+        String operators = "+-*/";
+        for (String token : tokens) {
+            if (!operators.contains(token)) {
+                s.push(Integer.valueOf(token));
+                continue;
+            }
+            int a = s.pop();
+            int b = s.pop();
+            if (token.equals("+")) {
+                s.push(b + a);
+            } else if(token.equals("-")) {
+                s.push(b - a);
+            } else if(token.equals("*")) {
+                s.push(b * a);
+            } else {
+                s.push(b / a);
+            }
+        }
+        return s.pop();
+    }
+```
+
+### 二分
+
+#### 二分搜索
+
+```java
+    public int binarySearch(int[] arr, int start, int end, int hkey){
+        if (start > end) {
+            return -1;
+        }
+        int mid = start + (end - start) / 2; //防止溢位
+        if (arr[mid] > hkey) {
+            return binarySearch(arr, start, mid - 1, hkey);
+        }
+        if (arr[mid] < hkey) {
+            return binarySearch(arr, mid + 1, end, hkey);
+        }
+        return mid;
+    }
+```
+
+#### X 的平方根
+
+```java
+    public int sqrt(int x) {
+        if (x < 0) {
+            throw new IllegalArgumentException();
+        } else if (x <= 1) {
+            return x;
+        }
+        int start = 1, end = x;
+        // 直接对答案可能存在的区间进行二分 => 二分答案
+        while (start + 1 < end) {
+            int mid = start + (end - start) / 2;
+            if (mid == x / mid) {
+                return mid;
+            } else if (mid < x / mid) {
+                start = mid;
+            } else {
+                end = mid;
+            }
+        }
+        if (end > x / end) {
+            return start;
+        }
+        return end;
+    }
+```
+
+### 哈希表
+
+#### 两数之和
+
+给一个整数数组，找到两个数使得他们的和等于一个给定的数 target。需要实现的函数 twoSum 需要返回这两个数的下标。用一个 hashmap 来记录，key 记录 target-numbers[i]的值，value 记录 numbers[i]的 i 的值， 如果碰到一个 numbers[j]在 hashmap 中存在，那么说明前面的某个 numbers[i]和 numbers[j]的和为 target，i 和 j 即为答案
+
+```java
+    public int[] twoSum(int[] numbers, int target) {
+        HashMap<Integer,Integer> map = new HashMap<>();
+        for (int i = 0; i < numbers.length; i++) {
+            if (map.containsKey(numbers[i])) {
+                return new int[]{map.get(numbers[i]), i};
+            }
+            map.put(target - numbers[i], i);
+        }
+        return new int[]{};
+    }
+```
+
+#### 连续数组
+
+给一个二进制数组，找到 0 和 1 数量相等的子数组的最大长度使用一个数字 sum 维护到 i 为止 1 的数量与 0 的数量的差值。在 loop i 的同时维护 sum 并将其插入 hashmap 中。对于某一个 sum 值，若 hashmap 中已有这个值，则当前的 i 与 sum 上一次出现的位置之间的序列 0 的数量与 1 的数量相同。
+
+```java
+    public int findMaxLength(int[] nums) {
+        Map<Integer, Integer> prefix = new HashMap<>();
+        int sum = 0;
+        int max = 0;
+        prefix.put(0, -1); // 当第一个 0 1 数量相等的情况出现时，数组下标减去-1 得到正确的长度
+        for (int i = 0; i < nums.length; i++) {
+            int num = nums[i];
+            if (num == 0) {
+                sum--;
+            } else {
+                sum++;
+            }
+            if (prefix.containsKey(sum)) {
+                max = Math.max(max, i - prefix.get(sum));
+            } else {
+                prefix.put(sum, i);
+            }
+        }
+        return max;
+    }
+```
+
+#### 最长无重复字符的子串
+
+用 HashMap 记录每一个字母出现的位置。设定一个左边界, 到当前枚举到的位置之间的字符串为不含重复字符的子串。若新碰到的字符的上一次的位置在左边界右边, 则需要向右移动左边界
+
+```java
+    public int lengthOfLongestSubstring(String s) {
+        if (s == null || s.length() == 0) {
+            return 0;
+        }
+        HashMap<Character, Integer> map = new HashMap<>();
+        int max = Integer.MIN_VALUE;
+        int start = -1; // 计算无重复字符子串开始的位置
+        int current = 0;
+        for (int i = 0; i < s.length(); i++) {
+            if (map.containsKey(s.charAt(i))) {
+                int tmp = map.get(s.charAt(i));
+                if (tmp >= start) { // 上一次的位置在左边界右边, 则需要向右移动左边界
+                    start = tmp;
+                }
+            }
+            map.put(s.charAt(i), i);
+            max = Math.max(max, i - start);
+        }
+        return max;
+    }
+```
+
+#### 最多点在一条直线上
+
+给出二维平面上的 n 个点，求最多有多少点在同一条直线上
+
+```java
+class Point {
+   int x;
+   int y;
+   Point() {
+      x = 0; y = 0;
+   }
+   Point(int a, int b) {
+      x = a; y = b;
+   }
+}
+```
+
+通过 HashMap 记录下两个点之间的斜率相同出现的次数，注意考虑点重合的情况
+
+```java
+    public int maxPoints(Point[] points) {
+        if (points == null) {
+            return 0;
+        }
+        int max = 0;
+        for (int i = 0; i < points.length; i++) {
+            Map<Double, Integer> map = new HashMap<>();
+            int maxPoints = 0;
+            int overlap = 0;
+            for (int j = i + 1; j < points.length; j++) {
+                if (points[i].x == points[j].x && points[i].y == points[j].y) {
+                    overlap++; // 两个点重合的情况记录下来
+                    continue;
+                }
+                double rate = (double)(points[i].y - points[j].y) / (points[i].x - points[j].x);
+                if (map.containsKey(rate)) {
+                    map.put(rate, map.get(rate) + 1);
+                } else {
+                    map.put(rate, 2);
+                }
+                maxPoints = Math.max(maxPoints, map.get(rate));
+            }
+            if (maxPoints == 0) maxPoints = 1;
+            max = Math.max(max, maxPoints + overlap);
+        }
+        return max;
+    }
+```
